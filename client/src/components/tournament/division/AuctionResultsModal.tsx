@@ -70,14 +70,13 @@ export default function AuctionResultsModal({ auctionId, auctionName, canManage,
   }
 
   function exportNames() {
-    const lines: string[] = []
-    for (const { captain, players } of teams) {
-      lines.push(captain.display_name)
-      for (const p of players) lines.push(p.player_name)
-    }
+    const data = teams.map(({ captain, players }) => ({
+      captain: captain.display_name,
+      players: players.map(p => p.player_name),
+    }))
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/plain' }))
-    a.download = `${auctionName}-roster.txt`
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
+    a.download = `${auctionName}-roster.json`
     a.click()
   }
 
