@@ -15,3 +15,7 @@ client/dist/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# IDE
+.vscode/
+.claude/
