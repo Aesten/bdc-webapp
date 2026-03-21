@@ -35,6 +35,11 @@ app.route('/api/factions', factions)
 
 app.use('/uploads/*', serveStatic({ root: './' }))
 
+// ─── Serve frontend (production build) ────────────────────────────────────────
+
+app.use('/*', serveStatic({ root: './dist/client' }))
+app.get('/*', async (c) => c.html(await Bun.file('./dist/client/index.html').text()))
+
 // ─── WebSocket: Auction room ──────────────────────────────────────────────────
 // /ws/auction/:sessionId?token=<jwt>
 // Public clients omit token — read-only observer mode.
