@@ -173,9 +173,7 @@ function FinalsPoolModal({ maps, slug, project, matchups, onProjectUpdate, onClo
   const [pool, setPool] = useState<number[]>(currentPool)
 
   function toggle(mapId: number) {
-    const inPool    = tournamentPool.includes(mapId)
-    const used      = usedMapIds.has(mapId)
-    if (!inPool || used) return
+    if (!tournamentPool.includes(mapId)) return
     setPool(prev => {
       if (prev.includes(mapId)) return prev.filter(id => id !== mapId)
       if (prev.length >= FINALS_POOL_SIZE) return prev
@@ -222,15 +220,11 @@ function FinalsPoolModal({ maps, slug, project, matchups, onProjectUpdate, onClo
             const inPool   = tournamentPool.includes(m.id)
             const used     = usedMapIds.has(m.id)
             const full     = pool.length >= FINALS_POOL_SIZE && !selected
-            const disabled = !inPool || used || (full && !selected)
+            const disabled = !inPool || (full && !selected)
 
             return (
               <button key={m.id} onClick={() => toggle(m.id)} disabled={disabled}
-                title={
-                  !inPool ? 'Not in tournament pool'
-                    : used ? 'Already used in group stage'
-                      : undefined
-                }
+                title={!inPool ? 'Not in tournament pool' : undefined}
                 className={cn(
                   'w-full flex items-center gap-2 px-3 py-2 rounded-xl border text-sm text-left transition-all',
                   selected
@@ -240,15 +234,10 @@ function FinalsPoolModal({ maps, slug, project, matchups, onProjectUpdate, onClo
                       : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-600',
                 )}>
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-                  {selected
-                    ? <Check className="w-3 h-3 text-amber-400" />
-                    : used
-                      ? <X className="w-3 h-3 text-zinc-700" />
-                      : null
-                  }
+                  {selected && <Check className="w-3 h-3 text-amber-400" />}
                 </div>
                 <span className="flex-1 truncate font-medium">{m.name}</span>
-                {used && <span className="text-[9px] font-mono text-zinc-600">used</span>}
+                {used && <span className="text-[9px] font-mono text-zinc-500 italic">used</span>}
               </button>
             )
           })}
