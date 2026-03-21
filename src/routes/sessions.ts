@@ -170,7 +170,7 @@ sessions.get('/:id', requireAuth('admin', 'host', 'auctioneer', 'captain'), asyn
     : []
 
   const chatMessages = queryAll<SessionChatMessage>(
-    `SELECT * FROM session_chat WHERE session_id = ? ORDER BY sent_at ASC LIMIT 100`,
+    `SELECT * FROM (SELECT * FROM session_chat WHERE session_id = ? ORDER BY sent_at DESC LIMIT 100) ORDER BY sent_at ASC`,
     [id]
   )
 
