@@ -260,6 +260,41 @@ sessions.post('/auction/:auctionId', requireAuth('admin', 'host', 'auctioneer'),
   return c.json({ session, upcoming }, 201)
 })
 
+// ─── Sync Pool (pending only) ────────────────────────────────────────────────
+
+sessions.post('/:id/sync-pool', requireAuth('admin', 'auctioneer'), async (c) => {
+  const id = Number(c.req.param('id'))
+
+  const session = queryOne<AuctionSession>('SELECT * FROM auction_sessions WHERE id = ?', [id])
+  if (!session) return c.json({ error: 'Session not found' }, 404)
+  if (session.status !== 'pending') return c.json({ error: 'Can only sync pool on a pending session' }, 409)
+
+  const auctionMeta = queryOne<{ tournament_id: number }>(
+    'SELECT tournament_id FROM auctions WHERE id = ?', [session.auction_id]
+  )
+  if (!auctionMeta) return c.json({ error: 'Auction not found' }, 404)
+
+  const available = queryAll<Player>(
+    'SELECT * FROM players WHERE tournament_id = ? AND is_available = 1',
+    [auctionMeta.tournament_id]
+  )
+
+  const shuffled = shuffle(available)
+
+  transaction(() => {
+    execute('DELETE FROM session_queue WHERE session_id = ? AND status = ?', [id, 'pending'])
+    const insertQueue = getDb().prepare(
+      `INSERT INTO session_queue (session_id, player_id, player_name, queue_position) VALUES (?, ?, ?, ?)`
+    )
+    shuffled.forEach((player, i) => {
+      insertQueue.run(id, player.id, player.name, i)
+    })
+  })
+
+  notify(id)
+  return c.json({ ok: true, count: shuffled.length })
+})
+
 // ─── Go Live ──────────────────────────────────────────────────────────────────
 
 sessions.post('/:id/live', requireAuth('admin', 'auctioneer'), async (c) => {

@@ -89,6 +89,8 @@ export const sessionsApi = {
     api.delete<{ ok: boolean }>(`/api/sessions/${id}/bids/${bidId}`),
   chat: (id: number, content: string) =>
     api.post<{ ok: boolean }>(`/api/sessions/${id}/chat`, { content }),
+  syncPool: (id: number) =>
+    api.post<{ ok: boolean; count: number }>(`/api/sessions/${id}/sync-pool`),
   toggleHalfBudget: (id: number) =>
     api.post<{ ok: boolean; half_budget: number }>(`/api/sessions/${id}/half-budget`),
   assign: (id: number, data: { captain_id: number; player_queue_id: number }) =>

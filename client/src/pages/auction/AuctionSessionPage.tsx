@@ -8,7 +8,7 @@ import {
 } from '@/api/sessions'
 import PublicNav from '@/components/PublicNav'
 import {
-  Loader2, Radio, Pause, Check,
+  Loader2, Radio, Pause, Check, RefreshCw,
   ChevronRight, Trophy, Flag,
 } from 'lucide-react'
 import { useWs } from '@/hooks/useWs'
@@ -56,6 +56,7 @@ export default function AuctionSessionPage() {
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState('')
   const [halting,     setHalting]     = useState(false)
+  const [syncing,     setSyncing]     = useState(false)
   const [starting,    setStarting]    = useState(false)
   const [finishing,   setFinishing]   = useState(false)
   const [showPool,    setShowPool]    = useState(false)
@@ -110,6 +111,13 @@ export default function AuctionSessionPage() {
     catch { /* ignore */ } finally { setHalting(false) }
   }
 
+  async function handleSyncPool() {
+    if (!detail) return
+    setSyncing(true)
+    try { await sessionsApi.syncPool(detail.session.id); await load() }
+    catch { /* ignore */ } finally { setSyncing(false) }
+  }
+
   async function handleStart() {
     if (!detail) return
     setStarting(true)
@@ -152,6 +160,7 @@ export default function AuctionSessionPage() {
   )
 
   const { session, activePlayer, upcoming, purchases, captains, progress, auctionName, minIncrement, bidCooldown, currentBid, bidHistory, chatMessages } = detail
+  const isPending  = session.status === 'pending'
   const isPaused   = session.status === 'paused'
   const isLive     = session.status === 'live'
   const isFinished = session.status === 'finished'
@@ -171,6 +180,12 @@ export default function AuctionSessionPage() {
       <PublicNav extra={
         <div className="flex items-center gap-2">
           <StatusBadge status={session.status} />
+          {canControl && isPending && (
+            <button onClick={handleSyncPool} disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-zinc-800 border-zinc-700 text-zinc-300 text-xs font-semibold hover:bg-zinc-700 transition-colors disabled:opacity-40">
+              {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Sync Pool
+            </button>
+          )}
           {canHalt && isLive && (
             <button onClick={handleHalt} disabled={halting}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-orange-500/15 border-orange-500/30 text-orange-400 text-xs font-semibold hover:bg-orange-500/25 transition-colors disabled:opacity-40">
