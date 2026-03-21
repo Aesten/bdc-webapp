@@ -9,8 +9,8 @@ export default function CurrentPlayerCard({
   detail:      SessionDetail
   isLive:      boolean
   isPaused:    boolean
-  onStart:     () => void
-  starting:    boolean
+  onStart?:    () => void
+  starting?:   boolean
   currentBid:  SessionBid | null
   className?:  string
 }) {
@@ -73,11 +73,17 @@ export default function CurrentPlayerCard({
 
       {isLive && !activePlayer && (
         <div className="px-3 pb-3 flex-shrink-0">
-          <button onClick={onStart} disabled={starting}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm transition-colors disabled:opacity-40">
-            {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            Start Auction
-          </button>
+          {onStart ? (
+            <button onClick={onStart} disabled={starting}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm transition-colors disabled:opacity-40">
+              {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              Start Auction
+            </button>
+          ) : (
+            <p className="w-full flex items-center justify-center py-2 text-xs text-zinc-600 italic text-center">
+              Waiting for auctioneer to start the auction…
+            </p>
+          )}
         </div>
       )}
 

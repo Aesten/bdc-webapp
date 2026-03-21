@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Loader2, Plus, Trash2, Eye, EyeOff, Pencil, Check, X, RefreshCw } from 'lucide-react'
+import { Loader2, Plus, Trash2, Eye, EyeOff, Pencil, Check, X, RefreshCw, Link2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type Captain } from '@/api/auctions'
-import { CLASSES, CLASS_ICON, type ClassKey } from '@/components/tournament/shared'
+import { CLASSES, CLASS_ICON, CLASS_COLOR, type ClassKey } from '@/components/tournament/shared'
 
 // ─── Captain class picker ─────────────────────────────────────────────────────
 
@@ -10,11 +10,7 @@ function ClassPicker({ value, onChange }: {
   value: ClassKey | null
   onChange: (v: ClassKey | null) => void
 }) {
-  const colorMap: Record<ClassKey, string> = {
-    inf: 'text-blue-400 bg-blue-400/15 border-blue-400/30',
-    arc: 'text-purple-400 bg-purple-400/15 border-purple-400/30',
-    cav: 'text-amber-400 bg-amber-400/15 border-amber-400/30',
-  }
+  const colorMap = CLASS_COLOR
   return (
     <div className="flex gap-1">
       {CLASSES.map(c => {
@@ -57,6 +53,14 @@ export default function CaptainSlot({ index, captain, canManage, isAuctioneer, s
   const [fillClass,    setFillClass]    = useState<ClassKey | null>(null)
   const [saving,       setSaving]       = useState(false)
   const [tokenBusy,    setTokenBusy]    = useState(false)
+  const [urlCopied,    setUrlCopied]    = useState(false)
+
+  function copyLoginUrl() {
+    if (!captain?.token) return
+    navigator.clipboard.writeText(`${window.location.origin}/join?t=${captain.token}`)
+    setUrlCopied(true)
+    setTimeout(() => setUrlCopied(false), 2000)
+  }
   const num = index + 1
 
   async function handleAdd() {
@@ -116,14 +120,14 @@ export default function CaptainSlot({ index, captain, canManage, isAuctioneer, s
             <input value={fillName} onChange={e => setFillName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
               placeholder="Name…"
-              className="flex-1 min-w-[5rem] px-2 py-1 rounded-lg bg-zinc-800/50 border border-zinc-800 text-sm text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-amber-500/30 transition-colors" />
+              className="flex-1 min-w-[8rem] px-2 py-1 rounded-lg bg-zinc-800/50 border border-zinc-800 text-sm text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-amber-500/30 transition-colors" />
             <input value={fillTeamName} onChange={e => setFillTeamName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
               placeholder="Team name…"
-              className="flex-1 min-w-[5rem] px-2 py-1 rounded-lg bg-zinc-800/50 border border-zinc-800 text-sm text-zinc-400 placeholder:text-zinc-700 focus:outline-none focus:border-amber-500/30 transition-colors" />
+              className="flex-1 min-w-[8rem] px-2 py-1 rounded-lg bg-zinc-800/50 border border-zinc-800 text-sm text-zinc-400 placeholder:text-zinc-700 focus:outline-none focus:border-amber-500/30 transition-colors" />
             <input value={fillBudget} onChange={e => setFillBudget(e.target.value)}
               type="number" step="0.1" min="0"
-              className="w-14 px-2 py-1 rounded-lg bg-zinc-800/50 border border-zinc-800 text-sm font-mono text-zinc-500 focus:outline-none focus:border-amber-500/30 transition-colors" />
+              className="w-20 px-2 py-1 rounded-lg bg-zinc-800/50 border border-zinc-800 text-sm font-mono text-zinc-500 focus:outline-none focus:border-amber-500/30 transition-colors" />
             <ClassPicker value={fillClass} onChange={setFillClass} />
             <button onClick={handleAdd} disabled={saving || !fillName.trim()}
               className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition-colors disabled:opacity-40">
@@ -190,7 +194,7 @@ export default function CaptainSlot({ index, captain, canManage, isAuctioneer, s
             : captain.class
               ? (() => {
                   const I = CLASS_ICON[captain.class!]
-                  const boxCls = { inf: 'text-blue-400 bg-blue-400/10 border-blue-400/30', arc: 'text-purple-400 bg-purple-400/10 border-purple-400/30', cav: 'text-amber-400 bg-amber-400/10 border-amber-400/30' }[captain.class!]
+                  const boxCls = CLASS_COLOR[captain.class!]
                   return (
                     <div className={cn('w-8 h-8 flex items-center justify-center rounded-lg border mr-1.5', boxCls)}>
                       <I className="w-5 h-5" />
@@ -211,6 +215,10 @@ export default function CaptainSlot({ index, captain, canManage, isAuctioneer, s
               <button onClick={onToggleShow}
                 className="text-zinc-600 hover:text-zinc-300 transition-colors ml-0.5">
                 {showToken ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              </button>
+              <button onClick={copyLoginUrl} title="Copy login URL"
+                className="text-zinc-600 hover:text-zinc-300 transition-colors ml-0.5">
+                {urlCopied ? <Check className="w-3 h-3 text-green-400" /> : <Link2 className="w-3 h-3" />}
               </button>
             </>
           ) : (

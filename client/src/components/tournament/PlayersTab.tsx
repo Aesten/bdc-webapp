@@ -3,9 +3,10 @@ import { playersApi, type Player } from '@/api/players'
 import { cn } from '@/lib/utils'
 import { Loader2, Plus, Check, X, Trash2, Pencil, Upload, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react'
 import {
-  CLASSES, type ClassKey, CLASS_COLOR, CLASS_ICON,
+  CLASSES, type ClassKey, CLASS_COLOR, CLASS_TEXT, CLASS_ICON,
   parseClasses, ClassToggle, type ViewRole,
 } from './shared'
+
 import { useToast } from '@/context/ToastContext'
 import ImportModal from './ImportModal'
 
@@ -212,9 +213,7 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
                       return (
                         <span key={c} className="w-10 flex justify-center items-center">
                           <Icon className={cn('w-5 h-5 transition-opacity',
-                            has
-                              ? c === 'inf' ? 'text-blue-400' : c === 'arc' ? 'text-purple-400' : 'text-amber-400'
-                              : 'text-zinc-800'
+                            has ? CLASS_TEXT[c] : 'text-zinc-800'
                           )} />
                         </span>
                       )

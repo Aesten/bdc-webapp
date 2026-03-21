@@ -12,14 +12,19 @@ export const CLASSES = ['inf', 'arc', 'cav'] as const
 export type ClassKey = typeof CLASSES[number]
 export const CLASS_LABEL: Record<ClassKey, string> = { inf: 'Inf', arc: 'Arc', cav: 'Cav' }
 export const CLASS_COLOR: Record<ClassKey, string> = {
-  inf: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-  arc: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
-  cav: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+  inf: 'text-stone-300  bg-stone-300/10  border-stone-300/20',
+  arc: 'text-amber-400  bg-amber-400/10  border-amber-400/20',
+  cav: 'text-rose-500   bg-rose-500/10   border-rose-500/20',
 }
 export const CLASS_DOT: Record<ClassKey, string> = {
-  inf: 'bg-blue-400',
-  arc: 'bg-purple-400',
-  cav: 'bg-amber-400',
+  inf: 'bg-stone-300',
+  arc: 'bg-amber-400',
+  cav: 'bg-rose-500',
+}
+export const CLASS_TEXT: Record<ClassKey, string> = {
+  inf: 'text-stone-300',
+  arc: 'text-amber-400',
+  cav: 'text-rose-500',
 }
 
 // ─── Class icons (from assets/icons/inf.svg, arc.svg, cav.svg) ───────────────

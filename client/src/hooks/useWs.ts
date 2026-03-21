@@ -1,5 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 
+declare const __WS_ORIGIN__: string
+
 export interface WsMessage {
   type: string
   payload: unknown
@@ -31,11 +33,10 @@ export function useWs({ sessionId, token, path = 'auction', onMessage, onOpen, e
   const connect = useCallback(() => {
     if (!enabled || !mountedRef.current) return
 
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const host = window.location.host
+    const origin = __WS_ORIGIN__ || ((window.location.protocol === 'https:' ? 'wss' : 'ws') + '://' + window.location.host)
     const url = token
-      ? `${protocol}://${host}/ws/${path}/${sessionId}?token=${encodeURIComponent(token)}`
-      : `${protocol}://${host}/ws/${path}/${sessionId}`
+      ? `${origin}/ws/${path}/${sessionId}?token=${encodeURIComponent(token)}`
+      : `${origin}/ws/${path}/${sessionId}`
 
     setStatus('connecting')
     const ws = new WebSocket(url)
@@ -81,7 +82,19 @@ export function useWs({ sessionId, token, path = 'auction', onMessage, onOpen, e
     return () => {
       mountedRef.current = false
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
-      wsRef.current?.close()
+      const ws = wsRef.current
+      wsRef.current = null
+      if (ws) {
+        if (ws.readyState === WebSocket.CONNECTING) {
+          // Defer close until connected to avoid the "closed before established" warning
+          ws.onopen = () => ws.close()
+          ws.onerror = null
+          ws.onmessage = null
+          ws.onclose = null
+        } else {
+          ws.close()
+        }
+      }
     }
   }, [connect, enabled])
 

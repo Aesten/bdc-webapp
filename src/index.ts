@@ -35,14 +35,10 @@ app.route('/api/factions', factions)
 
 app.use('/uploads/*', serveStatic({ root: './' }))
 
-// ─── Serve frontend (production build) ────────────────────────────────────────
-
-app.use('/*', serveStatic({ root: './dist/client' }))
-app.get('/*', async (c) => c.html(await Bun.file('./dist/client/index.html').text()))
-
 // ─── WebSocket: Auction room ──────────────────────────────────────────────────
 // /ws/auction/:sessionId?token=<jwt>
 // Public clients omit token — read-only observer mode.
+// Must be registered before the /*  SPA catch-all.
 
 app.get('/ws/auction/:sessionId', upgradeWebSocket((c) => {
   const sessionId = Number(c.req.param('sessionId'))
@@ -61,6 +57,14 @@ app.get('/ws/pickban/:sessionId', upgradeWebSocket((c) => {
     onClose(_, ws) { onPickBanWsClose(ws) },
   }
 }))
+
+// ─── Serve frontend (production build) ────────────────────────────────────────
+
+app.use('/*', serveStatic({ root: './dist/client' }))
+app.get('/*', async (c) => {
+  try { return c.html(await Bun.file('./dist/client/index.html').text()) }
+  catch { return c.text('Not found (build the frontend first)', 404) }
+})
 
 // ─── Serve ────────────────────────────────────────────────────────────────────
 

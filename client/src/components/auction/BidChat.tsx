@@ -117,11 +117,11 @@ export default function BidChat({
               <AlertCircle className="w-3 h-3 flex-shrink-0" />{error}
             </p>
           )}
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="flex gap-1.5">
             {[0.1, 0.2, 0.5, 1.0, 2.0].map(d => (
               <button key={d} onClick={() => submitBid(lastBidRef.current + d)}
                 disabled={submitting || cooldown}
-                className="text-sm font-mono font-semibold px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:bg-amber-500/35 border border-amber-500/30 hover:border-amber-500/50 text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                className="flex-1 text-sm font-mono font-semibold px-0 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:bg-amber-500/35 border border-amber-500/30 hover:border-amber-500/50 text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                 +{d.toFixed(1)}
               </button>
             ))}

@@ -10,7 +10,7 @@ logger.error = (msg, opts) => {
   _error(msg, opts)
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   customLogger: logger,
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -18,26 +18,20 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  define: {
+    // In dev, bypass Vite's broken WS proxy and connect directly to the backend.
+    // In production the frontend is served by the same server, so no origin needed.
+    __WS_ORIGIN__: JSON.stringify(mode === 'development' ? 'ws://localhost:3000' : ''),
+  },
   server: {
     port: 5173,
     proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
-      '/ws': {
-        target: 'ws://localhost:3000',
-        ws: true,
-        changeOrigin: true,
-      },
-      '/uploads': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
+      '/api':     { target: 'http://localhost:3000', changeOrigin: true },
+      '/uploads': { target: 'http://localhost:3000', changeOrigin: true },
     },
   },
   build: {
     outDir: '../dist/client',
     emptyOutDir: true,
   },
-})
+}))

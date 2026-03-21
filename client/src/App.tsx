@@ -21,6 +21,7 @@ const PublicProjectPage    = lazy(() => import('@/pages/public/PublicProjectPage
 const PublicArchive        = lazy(() => import('@/pages/public/PublicArchive'))
 const PublicTeamsPage      = lazy(() => import('@/pages/public/PublicTeamsPage'))
 const AuctionSessionPage   = lazy(() => import('@/pages/auction/AuctionSessionPage'))
+const TokenLogin           = lazy(() => import('@/pages/TokenLogin'))
 
 function PageLoader() {
   return (
@@ -123,6 +124,7 @@ function AppRoutes() {
         {/* Auth */}
         <Route path="/login"       element={<LoginPage />} />
         <Route path="/admin-login" element={<AdminLoginPage />} />
+        <Route path="/join"        element={<TokenLogin />} />
 
         {/* Protected */}
         <Route path="/admin/*" element={<RequireAuth roles={['admin']}><AdminDashboard /></RequireAuth>} />

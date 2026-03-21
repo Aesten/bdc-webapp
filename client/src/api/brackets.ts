@@ -159,6 +159,9 @@ export const bracketsApi = {
     api.patch<Matchup>(`/api/brackets/matchups/${id}`, data),
 
   // Pick-ban
+  getMyPickBan: () =>
+    api.get<PickBanDetail | null>('/api/brackets/pickban/mine'),
+
   createPickBan: (matchId: number, mapPool: number[]) =>
     api.post<PickBanSession>(`/api/brackets/matches/${matchId}/pickban`, { map_pool: mapPool }),
 

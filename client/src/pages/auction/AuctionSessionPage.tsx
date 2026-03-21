@@ -251,7 +251,7 @@ export default function AuctionSessionPage() {
                 detail={detail}
                 isLive={isLive}
                 isPaused={isPaused}
-                onStart={handleStart}
+                onStart={canControl ? handleStart : undefined}
                 starting={starting}
                 currentBid={currentBid}
                 className="flex-none"
@@ -366,7 +366,7 @@ export default function AuctionSessionPage() {
                   detail={detail}
                   isLive={isLive}
                   isPaused={isPaused}
-                  onStart={handleStart}
+                  onStart={canControl ? handleStart : undefined}
                   starting={starting}
                   currentBid={currentBid}
                   className="flex-none"

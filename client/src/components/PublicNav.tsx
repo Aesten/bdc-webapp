@@ -1,8 +1,8 @@
 import { type ReactNode, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import type { Role } from '@/api/auth'
-import { Loader2 } from 'lucide-react'
+import { Loader2, LogOut } from 'lucide-react'
 import logo from '@/assets/logos/bdc_logo_nobg.png'
 import { tournamentsApi } from '@/api/tournaments'
 
@@ -15,14 +15,27 @@ const DASHBOARD: Record<Role, string> = {
   captain:    '/captain',
 }
 
+const DASHBOARD_LABEL: Record<Role, string> = {
+  admin:      'Dashboard',
+  host:       'Dashboard',
+  auctioneer: 'Dashboard',
+  captain:    'Captain Controls',
+}
+
 interface Props {
   extra?: ReactNode
   center?: ReactNode
 }
 
 export default function PublicNav({ extra, center }: Props) {
-  const { user, loading } = useAuth()
+  const { user, loading, logout } = useAuth()
+  const navigate = useNavigate()
   const [logoHref, setLogoHref] = useState<string>(cachedFeaturedHref ?? '/')
+
+  async function handleLogout() {
+    await logout()
+    navigate('/', { replace: true })
+  }
 
   useEffect(() => {
     if (cachedFeaturedHref !== null) return
@@ -36,7 +49,7 @@ export default function PublicNav({ extra, center }: Props) {
 
   return (
     <header className="relative flex-shrink-0 sticky top-0 z-30 border-b border-zinc-800" style={{ backgroundColor: '#212022' }}>
-      <div className="w-full px-[5%] h-14 flex items-center justify-between">
+      <div className="w-full px-[5%] py-3 flex items-center justify-between">
         <Link to={logoHref} className="flex items-center">
           <img src={logo} alt="BDC" className="h-12 w-auto" />
         </Link>
@@ -53,12 +66,18 @@ export default function PublicNav({ extra, center }: Props) {
           {loading ? (
             <Loader2 className="w-4 h-4 text-zinc-600 animate-spin" />
           ) : user ? (
-            <Link
-              to={DASHBOARD[user.role]}
-              className="px-3.5 py-1.5 rounded-lg bg-amber-500 text-black text-xs font-semibold hover:bg-amber-400 transition-colors"
-            >
-              Dashboard
-            </Link>
+            <>
+              <Link
+                to={DASHBOARD[user.role]}
+                className="px-3.5 py-1.5 rounded-lg bg-amber-500 text-black text-xs font-semibold hover:bg-amber-400 transition-colors"
+              >
+                {DASHBOARD_LABEL[user.role]}
+              </Link>
+              <button onClick={handleLogout}
+                className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-300 transition-colors">
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </>
           ) : (
             <Link
               to="/login"

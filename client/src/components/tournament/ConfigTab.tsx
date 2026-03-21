@@ -3,22 +3,31 @@ import { useNavigate } from 'react-router-dom'
 import { tournamentsApi, type Tournament } from '@/api/tournaments'
 import { authApi } from '@/api/auth'
 import { useAuth } from '@/context/AuthContext'
-import { Loader2, Eye, EyeOff, Key, ShieldOff, RefreshCw, LogIn, Users } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Key, ShieldOff, RefreshCw, LogIn, Users, Link2, Check } from 'lucide-react'
 import { SectionLabel, inputCls, type ViewRole } from './shared'
 import { useToast } from '@/context/ToastContext'
 
 // ─── Token row ────────────────────────────────────────────────────────────────
 
-function TokenRow({ token, busy, onGenerate, onRevoke, loginLabel, onLoginAs }: {
+function TokenRow({ token, busy, onGenerate, onRevoke, loginLabel, onLoginAs, showCopyUrl }: {
   token: string | null
   busy: boolean
   onGenerate: () => Promise<void>
   onRevoke: () => Promise<void>
   loginLabel?: string
   onLoginAs?: () => Promise<void>
+  showCopyUrl?: boolean
 }) {
   const [show,        setShow]        = useState(false)
   const [loginBusy,   setLoginBusy]   = useState(false)
+  const [urlCopied,   setUrlCopied]   = useState(false)
+
+  function copyLoginUrl() {
+    if (!token) return
+    navigator.clipboard.writeText(`${window.location.origin}/join?t=${token}`)
+    setUrlCopied(true)
+    setTimeout(() => setUrlCopied(false), 2000)
+  }
 
   async function handleLoginAs() {
     if (!onLoginAs) return
@@ -44,6 +53,12 @@ function TokenRow({ token, busy, onGenerate, onRevoke, loginLabel, onLoginAs }: 
               <button onClick={() => setShow(s => !s)} className="text-zinc-600 hover:text-zinc-300 transition-colors flex-shrink-0 ml-1">
                 {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
+              {showCopyUrl && (
+                <button onClick={copyLoginUrl} title="Copy login URL"
+                  className="text-zinc-600 hover:text-zinc-300 transition-colors flex-shrink-0 ml-0.5">
+                  {urlCopied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Link2 className="w-3.5 h-3.5" />}
+                </button>
+              )}
             </>
           ) : (
             <p className="text-xs text-zinc-700 italic">No token</p>
@@ -172,6 +187,7 @@ export default function ConfigTab({ project, onProjectUpdate, role }: {
           ? <TokenRow
               token={project.auctioneer_token ?? null}
               busy={auctBusy}
+              showCopyUrl
               onGenerate={async () => {
                 setAuctBusy(true)
                 try { const r = await authApi.generateAuctioneerToken(project.slug); onProjectUpdate({ ...project, auctioneer_token: r.token }) }

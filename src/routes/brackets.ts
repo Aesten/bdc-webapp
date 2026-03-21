@@ -704,6 +704,19 @@ brackets.post('/matches/:matchId/pickban', requireAuth('admin', 'host'), async (
   )!, 201)
 })
 
+brackets.get('/pickban/mine', requireAuth('captain'), (c) => {
+  const auth      = c.get('auth')
+  const captainId = (auth as CaptainJwtPayload).captainId
+  const session   = queryOne<PickBanSession>(
+    `SELECT * FROM pick_ban_sessions
+     WHERE (captain_a_id = ? OR captain_b_id = ?) AND status != 'complete'
+     ORDER BY id DESC LIMIT 1`,
+    [captainId, captainId]
+  )
+  if (!session) return c.json(null)
+  return c.json({ session: safeSession(session), bans: enrichBans(session), ...enrichPickBan(session) })
+})
+
 brackets.get('/pickban/:id', async (c) => {
   const id      = Number(c.req.param('id'))
   const session = queryOne<PickBanSession>('SELECT * FROM pick_ban_sessions WHERE id = ?', [id])

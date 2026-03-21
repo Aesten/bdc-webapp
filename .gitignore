@@ -11,6 +11,7 @@ client/dist/
 # Environment variables
 .env
 .env.local
+client/.env.development
 
 # OS noise
 .DS_Store
