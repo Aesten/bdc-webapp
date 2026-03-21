@@ -1,0 +1,17 @@
+# Database & uploads (runtime data, never commit)
+data/
+uploads/
+
+# Dependencies
+node_modules/
+
+# Frontend build output
+client/dist/
+
+# Environment variables
+.env
+.env.local
+
+# OS noise
+.DS_Store
+Thumbs.db

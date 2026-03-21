@@ -1,0 +1,169 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  /* Fonts */
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --font-display: "Barlow Condensed", sans-serif;
+
+  /* Surface colors */
+  --color-surface-base: #0a0a0b;
+  --color-surface-raised: #111113;
+  --color-surface-overlay: #18181b;
+  --color-surface-border: #27272a;
+  --color-surface-muted: #3f3f46;
+
+  /* Accent — amber */
+  --color-accent: #f59e0b;
+  --color-accent-bright: #fbbf24;
+  --color-accent-dim: #d97706;
+  --color-accent-glow: #f59e0b33;
+
+  /* Text */
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #52525b;
+  --color-text-accent: #f59e0b;
+
+  /* Shadows */
+  --shadow-amber-glow: 0 0 20px rgba(245, 158, 11, 0.15);
+  --shadow-amber-glow-lg: 0 0 40px rgba(245, 158, 11, 0.2);
+
+  /* Animations */
+  --animate-slide-in-right: slide-in-right 0.25s ease-out;
+  --animate-slide-in-left: slide-in-left 0.25s ease-out;
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-fade-up: fade-up 0.3s ease-out;
+  --animate-pulse-amber: pulse-amber 2s ease-in-out infinite;
+
+  @keyframes slide-in-right {
+    from { transform: translateX(40px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  @keyframes slide-in-left {
+    from { transform: translateX(-40px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+  @keyframes pulse-amber {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    50%       { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.15); }
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  :root {
+    --color-accent: #f59e0b;
+    --color-accent-dim: #d97706;
+    --color-surface-base: #0a0a0b;
+    --color-surface-raised: #111113;
+    --color-surface-border: #27272a;
+  }
+
+  html {
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  }
+
+  body {
+    background-color: var(--color-surface-base);
+    min-height: 100vh;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #52525b;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fafafa;
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid rgba(245, 158, 11, 0.6);
+    outline-offset: 2px;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #18181b inset;
+    -webkit-text-fill-color: #fafafa;
+    caret-color: #fafafa;
+  }
+}
+
+@layer components {
+  /* Amber glow border utility */
+  .border-amber-glow {
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.1);
+  }
+
+  /* Grid background texture */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Status pill */
+  .status-live {
+    @apply inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider;
+    color: #4ade80;
+  }
+  .status-live::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 6px #4ade80;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+}
+
+/* ─── Autofill override ────────────────────────────────────────────────────── */
+/* Browsers force a white/yellow background on autofilled inputs.
+   Using a long box-shadow transition tricks them into using our color instead. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 9999px #18181b inset !important;
+  -webkit-text-fill-color: #f4f4f5 !important;
+  caret-color: #f4f4f5;
+  transition: background-color 9999s ease-in-out 0s;
+}

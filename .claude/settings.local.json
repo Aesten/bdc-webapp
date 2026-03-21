@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(bun run:*)",
+      "Bash(grep -r \"src=\\\\|src =\" /c/Users/minii/Documents/Coding/Bannerlord/bdc-webapp/client/src --include=*.tsx --include=*.ts --include=*.jsx --include=*.js)",
+      "Bash(grep -r \"img\\\\|Image\" /c/Users/minii/Documents/Coding/Bannerlord/bdc-webapp/client/src --include=*.tsx --include=*.ts --include=*.jsx --include=*.js)",
+      "Bash(grep -r \"\\\\.svg\\\\|\\\\.png\\\\|\\\\.jpg\" /c/Users/minii/Documents/Coding/Bannerlord/bdc-webapp/client/src --include=*.tsx --include=*.ts --include=*.jsx --include=*.js)",
+      "Bash(mkdir -p client/src/assets/logos client/src/assets/icons)",
+      "Bash(mv client/src/assets/bdc_logo_minimal.png client/src/assets/logos/)",
+      "Bash(mv client/src/assets/bdc_logo_full.png client/src/assets/logos/)",
+      "Bash(mv client/src/assets/inf.svg client/src/assets/icons/)",
+      "Bash(mv client/src/assets/arc.svg client/src/assets/icons/)",
+      "Bash(mv client/src/assets/cav.svg client/src/assets/icons/)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(xargs sed:*)",
+      "Bash(find /c/Users/minii/Documents/Coding/Bannerlord/bdc-webapp/src -type f -name *matchup* -o -name *mappool* -o -name *bracket*)",
+      "Bash(find c:UsersminiiDocumentsCodingBannerlordbdc-webappclientsrcapi -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\))",
+      "Bash(find /c/Users/minii/Documents/Coding/Bannerlord/bdc-webapp/client/src -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.jsx\" -o -name \"*.js\" -o -name \"*.json\" -o -name \"*.css\" -o -name \"*.scss\" \\\\\\) -exec wc -l {} +)",
+      "Bash(xargs grep:*)"
+    ]
+  }
+}
