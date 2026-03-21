@@ -19,11 +19,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-zinc-950">
-      <PublicNav extra={
-        <Link to="/login" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors font-mono">
-          Sign in
-        </Link>
-      } />
+      <PublicNav />
 
       <main className="px-[5%] py-16 max-w-[50vw]">
         {loading ? (
