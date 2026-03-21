@@ -29,3 +29,9 @@ export function formatTimeAgo(iso: string): string {
 export function slugify(str: string): string {
   return str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
 }
+
+/** Normalise an image_path stored without a leading slash (legacy) */
+export function imgSrc(path: string | null | undefined): string | undefined {
+  if (!path) return undefined
+  return path.startsWith('/') || path.startsWith('http') ? path : `/${path}`
+}

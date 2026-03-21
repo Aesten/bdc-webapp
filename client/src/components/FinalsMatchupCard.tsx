@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Copy, Check } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, imgSrc } from '@/lib/utils'
 
 import Aserai   from '@/assets/factions/Aserai.webp'
 import Battania from '@/assets/factions/Battania.webp'
@@ -45,7 +45,7 @@ export default function FinalsMatchupCard({ mapImage, mapName, mapGameId, factio
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
       <div className="relative overflow-hidden" style={{ aspectRatio: '1920/855' }}>
         {mapImage
-          ? <img src={`/${mapImage}`} className="absolute inset-0 w-full h-full object-cover" alt="" />
+          ? <img src={imgSrc(mapImage)} className="absolute inset-0 w-full h-full object-cover" alt="" />
           : <div className="absolute inset-0 bg-zinc-800/60" />
         }
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/60" />

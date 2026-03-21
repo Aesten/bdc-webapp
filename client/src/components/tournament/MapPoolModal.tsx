@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Check, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, imgSrc } from '@/lib/utils'
 import { tournamentsApi, type Tournament } from '@/api/tournaments'
 import { type GameMap } from '@/api/maps'
 import { useToast } from '@/context/ToastContext'
@@ -79,7 +79,7 @@ export default function MapPoolModal({ maps, slug, project, onProjectUpdate, onC
                         : 'border-zinc-700 hover:border-zinc-500',
                     )}>
                     {m.image_path
-                      ? <img src={`/${m.image_path}`} alt={m.name} className="absolute inset-0 w-full h-full object-cover" />
+                      ? <img src={imgSrc(m.image_path)} alt={m.name} className="absolute inset-0 w-full h-full object-cover" />
                       : <div className="absolute inset-0 bg-gradient-to-br from-zinc-700 to-zinc-800" />
                     }
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

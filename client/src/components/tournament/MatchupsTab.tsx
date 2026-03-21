@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { type Matchup } from '@/api/brackets'
 import { tournamentsApi, type Tournament } from '@/api/tournaments'
 import { type GameMap, type Faction } from '@/api/maps'
-import { cn } from '@/lib/utils'
+import { cn, imgSrc } from '@/lib/utils'
 import { Check, Map, Dices, Settings2, Lock, Pencil, X, Swords } from 'lucide-react'
 import { SectionLabel, EmptyState, type ViewRole } from './shared'
 import { useToast } from '@/context/ToastContext'
@@ -40,7 +40,7 @@ function MatchupDisplayCard({ matchup }: {
   return (
     <div className="relative h-40 overflow-hidden">
       {matchup?.map_image
-        ? <img src={`/${matchup.map_image}`} alt={matchup.map_name ?? ''} className="absolute inset-0 w-full h-full object-cover" />
+        ? <img src={imgSrc(matchup.map_image)} alt={matchup.map_name ?? ''} className="absolute inset-0 w-full h-full object-cover" />
         : <div className="absolute inset-0 bg-zinc-800/50" />
       }
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/10 to-black/50" />

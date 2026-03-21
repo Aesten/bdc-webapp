@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { mapsApi, type GameMap } from '@/api/maps'
-import { cn } from '@/lib/utils'
+import { cn, imgSrc } from '@/lib/utils'
 import { Loader2, Plus, Trash2, Pencil, Check, X, Upload, ImageIcon, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useToast } from '@/context/ToastContext'
 
@@ -75,7 +75,7 @@ function MapRow({ map, onUpdate, onDelete }: {
         {uploading
           ? <Loader2 className="w-4 h-4 text-zinc-600 animate-spin" />
           : map.image_path
-            ? <img src={`/${map.image_path}`} alt={map.name} className="w-full h-full object-cover" />
+            ? <img src={imgSrc(map.image_path)} alt={map.name} className="w-full h-full object-cover" />
             : <ImageIcon className="w-4 h-4 text-zinc-700" />
         }
         <input ref={fileRef} type="file" accept="image/*" className="hidden"

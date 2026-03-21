@@ -7,7 +7,7 @@ import PublicNav from '@/components/PublicNav'
 import GroupStageView from '@/components/tournament/GroupStageView'
 import BracketView from '@/components/tournament/BracketView'
 import { KnockoutScoreRow } from '@/components/tournament/division/KnockoutSection'
-import { cn } from '@/lib/utils'
+import { cn, imgSrc } from '@/lib/utils'
 import { parseClasses, CLASS_ICON, CLASS_COLOR, CLASSES } from '@/components/tournament/shared'
 import { Loader2, Trophy, Copy, Check } from 'lucide-react'
 
@@ -124,7 +124,7 @@ function MatchupCard({ label, matchup }: {
       {/* Image area — 1920×855 native aspect ratio */}
       <div className="relative overflow-hidden" style={{ aspectRatio: '1920/855' }}>
         {matchup?.map_image
-          ? <img src={`/${matchup.map_image}`} className="absolute inset-0 w-full h-full object-cover" alt="" />
+          ? <img src={imgSrc(matchup.map_image)} className="absolute inset-0 w-full h-full object-cover" alt="" />
           : <div className="absolute inset-0 bg-zinc-800/60" />
         }
         {/* Darkening vignette */}
@@ -132,7 +132,7 @@ function MatchupCard({ label, matchup }: {
 
         {/* Round label — top left */}
         <div className="absolute top-1.5 left-2.5">
-          <span className="text-[9px] font-mono uppercase tracking-widest text-white/60">{label}</span>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-white/60">{label}</span>
         </div>
 
         {/* Map name — top right (when rolled) */}
@@ -156,16 +156,16 @@ function MatchupCard({ label, matchup }: {
         </div>
 
         {/* Command bar — overlaid at bottom */}
-        <div className="absolute bottom-0 inset-x-0 flex items-center gap-1.5 px-2.5 py-1 bg-black/50">
-          <p className={cn('text-[10px] font-mono truncate flex-1 select-all', rolled ? 'text-zinc-300' : 'text-zinc-600')}>
+        <div className="absolute bottom-0 inset-x-0 flex items-center gap-1.5 px-2.5 py-1.5 bg-black/50">
+          <p className={cn('text-xs font-mono truncate flex-1 select-all', rolled ? 'text-zinc-300' : 'text-zinc-600')}>
             {command}
           </p>
           {rolled && (
             <button onClick={handleCopy} title="Copy"
               className="flex-shrink-0 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer">
               {copied
-                ? <Check className="w-3 h-3 text-green-400" />
-                : <Copy className="w-3 h-3" />}
+                ? <Check className="w-3.5 h-3.5 text-green-400" />
+                : <Copy className="w-3.5 h-3.5" />}
             </button>
           )}
         </div>
@@ -180,7 +180,7 @@ const MATCHUP_SLOTS = [
   { round: 1, label: 'Round 1' },
   { round: 2, label: 'Round 2' },
   { round: 3, label: 'Round 3' },
-  { round: 4, label: 'Round 4' },
+  { round: 4, label: 'Semi-Finals' },
   { round: 5, label: 'Finals'  },
 ]
 

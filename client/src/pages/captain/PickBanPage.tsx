@@ -4,7 +4,7 @@ import { useWs } from '@/hooks/useWs'
 import { bracketsApi, type PickBanSession, type PickBanBan, type PickBanMapDetail, type PickBanCaptainDetail } from '@/api/brackets'
 import { factionsApi, type Faction } from '@/api/maps'
 import { useAuth } from '@/context/AuthContext'
-import { cn } from '@/lib/utils'
+import { cn, imgSrc } from '@/lib/utils'
 import { Loader2, Shield, Swords, RotateCcw } from 'lucide-react'
 import FinalsMatchupCard from '@/components/FinalsMatchupCard'
 
@@ -51,7 +51,7 @@ function MapCard({
     >
       {/* Map image / placeholder */}
       {map.image_path ? (
-        <img src={map.image_path} alt={map.name} className="absolute inset-0 w-full h-full object-cover" />
+        <img src={imgSrc(map.image_path)} alt={map.name} className="absolute inset-0 w-full h-full object-cover" />
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900" />
       )}

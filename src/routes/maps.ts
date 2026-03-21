@@ -16,7 +16,7 @@ async function saveImage(file: File, entityId: number): Promise<string> {
   mkdirSync(dir, { recursive: true })
   const name = `${Date.now()}.${ext}`
   await Bun.write(join(dir, name), file)
-  return `uploads/maps/${entityId}/${name}`
+  return `/uploads/maps/${entityId}/${name}`
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

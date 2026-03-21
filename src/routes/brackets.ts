@@ -299,6 +299,8 @@ brackets.post('/:id/reset', requireAuth('admin', 'host'), (c) => {
   if (!bracket) return c.json({ error: 'Bracket not found' }, 404)
 
   transaction(() => {
+    execute('DELETE FROM pick_ban_sessions WHERE match_id IN (SELECT id FROM matches WHERE bracket_id = ?)', [id])
+    execute('DELETE FROM matchups WHERE bracket_id = ?', [id])
     execute('DELETE FROM matches WHERE bracket_id = ?', [id])
     execute("UPDATE brackets SET slots = '[]', locked = 0 WHERE id = ?", [id])
   })
@@ -397,11 +399,11 @@ brackets.patch('/matches/:matchId/result', requireAuth('admin', 'host'), async (
          WHERE bracket_id = ? AND round >= 4`,
         [match.bracket_id]
       )
-      const finalsMatch = queryOne<Match>(`SELECT * FROM matches WHERE bracket_id = ? AND is_finals = 1`, [match.bracket_id])
-      if (finalsMatch) {
-        execute('DELETE FROM pick_ban_sessions WHERE match_id = ?', [finalsMatch.id])
-        execute('DELETE FROM matchups WHERE bracket_id = ? AND round >= 4', [match.bracket_id])
-      }
+      execute(
+        `DELETE FROM pick_ban_sessions WHERE match_id IN (SELECT id FROM matches WHERE bracket_id = ? AND round >= 4)`,
+        [match.bracket_id]
+      )
+      execute('DELETE FROM matchups WHERE bracket_id = ? AND round >= 4', [match.bracket_id])
       // Re-run advancement for both groups
       recalcGroup(match.bracket_id, 'A')
       recalcGroup(match.bracket_id, 'B')
@@ -414,11 +416,11 @@ brackets.patch('/matches/:matchId/result', requireAuth('admin', 'host'), async (
          WHERE bracket_id = ? AND round = 5`,
         [match.bracket_id]
       )
-      const finalsMatch = queryOne<Match>(`SELECT * FROM matches WHERE bracket_id = ? AND is_finals = 1`, [match.bracket_id])
-      if (finalsMatch) {
-        execute('DELETE FROM pick_ban_sessions WHERE match_id = ?', [finalsMatch.id])
-        execute('DELETE FROM matchups WHERE bracket_id = ? AND round >= 4', [match.bracket_id])
-      }
+      execute(
+        `DELETE FROM pick_ban_sessions WHERE match_id IN (SELECT id FROM matches WHERE bracket_id = ? AND round >= 4)`,
+        [match.bracket_id]
+      )
+      execute('DELETE FROM matchups WHERE bracket_id = ? AND round >= 4', [match.bracket_id])
       // Re-propagate both semi-final winners to finals
       const semis = queryAll<Match>(
         `SELECT * FROM matches WHERE bracket_id = ? AND round = 4 ORDER BY match_order ASC`, [match.bracket_id]
