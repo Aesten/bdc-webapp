@@ -155,7 +155,7 @@ sessions.get('/:id', requireAuth('admin', 'host', 'auctioneer', 'captain'), asyn
     ? queryOne<SessionBid>(
         `SELECT * FROM session_bids
          WHERE session_id = ? AND queue_entry_id = ?
-         ORDER BY placed_at DESC LIMIT 1`,
+         ORDER BY id DESC LIMIT 1`,
         [id, activePlayer.id]
       )
     : null
@@ -424,7 +424,7 @@ sessions.post('/:id/advance', requireAuth('admin', 'auctioneer'), async (c) => {
         ? queryOne<SessionBid>(
             `SELECT * FROM session_bids
              WHERE session_id = ? AND queue_entry_id = ?
-             ORDER BY placed_at DESC LIMIT 1`,
+             ORDER BY id DESC LIMIT 1`,
             [id, activeEntryForBid.id]
           )
         : null
@@ -621,7 +621,7 @@ sessions.post('/:id/bid', requireAuth('admin', 'auctioneer', 'captain'), async (
   transaction(() => {
     const topBid = queryOne<SessionBid>(
       `SELECT * FROM session_bids WHERE session_id = ? AND queue_entry_id = ?
-       ORDER BY placed_at DESC LIMIT 1`,
+       ORDER BY id DESC LIMIT 1`,
       [id, activeEntry.id]
     )
 
@@ -643,7 +643,7 @@ sessions.post('/:id/bid', requireAuth('admin', 'auctioneer', 'captain'), async (
 
     newBid = queryOne<SessionBid>(
       `SELECT * FROM session_bids WHERE session_id = ? AND queue_entry_id = ?
-       ORDER BY placed_at DESC LIMIT 1`,
+       ORDER BY id DESC LIMIT 1`,
       [id, activeEntry.id]
     )
   })
@@ -792,11 +792,15 @@ sessions.post('/:id/assign', requireAuth('admin', 'auctioneer'), async (c) => {
 
 // ─── Get Pending Players (auctioneer pool view — alphabetical, secret order) ──
 
-sessions.get('/:id/pending-players', requireAuth('admin', 'auctioneer'), async (c) => {
+sessions.get('/:id/pending-players', requireAuth('admin', 'auctioneer', 'captain'), async (c) => {
+  const auth = c.get('auth')
   const id = Number(c.req.param('id'))
 
   const session = queryOne<AuctionSession>('SELECT * FROM auction_sessions WHERE id = ?', [id])
   if (!session) return c.json({ error: 'Session not found' }, 404)
+  if (auth.role === 'captain' && session.auction_id !== auth.auctionId) {
+    return c.json({ error: 'Forbidden' }, 403)
+  }
 
   const players = queryAll<SessionQueueEntry & { player_classes: string }>(
     `SELECT sq.*, COALESCE(p.classes, '') as player_classes

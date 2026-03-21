@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Loader2, ArrowUp, X } from 'lucide-react'
+import { Loader2, ArrowUp, X, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { sessionsApi, type SessionQueueEntry } from '@/api/sessions'
-import { CLASS_COLOR, CLASS_ICON, parseClasses, type ClassKey } from '@/components/tournament/shared'
+import { CLASS_COLOR, CLASS_ICON, CLASS_TEXT, parseClasses, type ClassKey } from '@/components/tournament/shared'
 
 const CLASSES: ClassKey[] = ['inf', 'arc', 'cav']
+const CLASS_LABEL: Record<ClassKey, string> = { inf: 'Infantry', arc: 'Archer', cav: 'Cavalry' }
 const ROW_COLS = '1fr 1.5rem 1.5rem 1.5rem auto'
 
 export default function PlayerPoolModal({ sessionId, canPromote, onSetActive, onClose }: {
@@ -13,9 +14,11 @@ export default function PlayerPoolModal({ sessionId, canPromote, onSetActive, on
   onSetActive: () => void
   onClose:     () => void
 }) {
-  const [players,   setPlayers]   = useState<(SessionQueueEntry & { player_classes: string })[]>([])
-  const [loading,   setLoading]   = useState(true)
-  const [promoting, setPromoting] = useState<number | null>(null)
+  const [players,      setPlayers]      = useState<(SessionQueueEntry & { player_classes: string })[]>([])
+  const [loading,      setLoading]      = useState(true)
+  const [promoting,    setPromoting]    = useState<number | null>(null)
+  const [search,       setSearch]       = useState('')
+  const [classFilter,  setClassFilter]  = useState<ClassKey | null>(null)
   const mouseDownOnBackdrop = useRef(false)
 
   useEffect(() => {
@@ -34,11 +37,18 @@ export default function PlayerPoolModal({ sessionId, canPromote, onSetActive, on
     finally { setPromoting(null) }
   }
 
+  const q = search.trim().toLowerCase()
+  const visible = players.filter(p => {
+    if (q && !p.player_name.toLowerCase().includes(q)) return false
+    if (classFilter && !parseClasses(p.player_classes).includes(classFilter)) return false
+    return true
+  })
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onMouseDown={e => { mouseDownOnBackdrop.current = e.target === e.currentTarget }}
       onClick={e => { if (mouseDownOnBackdrop.current && e.target === e.currentTarget) onClose() }}>
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md flex flex-col max-h-[70vh] shadow-2xl">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md flex flex-col h-[70vh] shadow-2xl">
         {/* Header */}
         <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
           <span className="text-sm font-semibold text-zinc-200">Player Pool</span>
@@ -47,15 +57,38 @@ export default function PlayerPoolModal({ sessionId, canPromote, onSetActive, on
           </button>
         </div>
 
+        {/* Filters */}
+        <div className="px-4 py-2.5 border-b border-zinc-800 flex gap-2 flex-shrink-0">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500 pointer-events-none" />
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search…"
+              className="w-full pl-7 pr-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500" />
+          </div>
+          {CLASSES.map(cls => (
+            <button key={cls} onClick={() => setClassFilter(classFilter === cls ? null : cls)}
+              className={cn(
+                'px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition-colors',
+                classFilter === cls
+                  ? cn(CLASS_COLOR[cls], 'opacity-100')
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300'
+              )}>
+              {CLASS_LABEL[cls]}
+            </button>
+          ))}
+        </div>
+
         {/* List */}
         <div className="overflow-y-auto flex-1 min-h-0 divide-y divide-zinc-800/40">
           {loading ? (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
             </div>
-          ) : players.length === 0 ? (
-            <p className="text-sm text-zinc-600 italic text-center py-10">No players remaining in pool</p>
-          ) : players.map(p => {
+          ) : visible.length === 0 ? (
+            <p className="text-sm text-zinc-600 italic text-center py-10">
+              {players.length === 0 ? 'No players remaining in pool' : 'No matches'}
+            </p>
+          ) : visible.map(p => {
             const active = parseClasses(p.player_classes)
             return (
               <div key={p.id} className="grid items-center px-4 py-2 gap-x-2 hover:bg-zinc-800/40 transition-colors"
@@ -87,8 +120,9 @@ export default function PlayerPoolModal({ sessionId, canPromote, onSetActive, on
             )
           })}
         </div>
-        <div className="px-4 py-2.5 border-t border-zinc-800 flex-shrink-0">
+        <div className="px-4 py-2.5 border-t border-zinc-800 flex items-center justify-between flex-shrink-0">
           <p className="text-[10px] text-zinc-600 italic">Queue order is hidden. This list is alphabetical.</p>
+          <span className="text-[10px] text-zinc-600 tabular-nums">{visible.length} / {players.length}</span>
         </div>
       </div>
     </div>
