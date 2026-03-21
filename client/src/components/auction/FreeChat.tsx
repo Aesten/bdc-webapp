@@ -28,8 +28,11 @@ export default function FreeChat({ sessionId, messages, onLoad, className }: {
   async function handleSend() {
     if (!text.trim()) return
     setSubmitting(true)
-    try { await sessionsApi.chat(sessionId, text.trim()); setText(''); onLoad?.() }
-    catch { /* ignore */ } finally { setSubmitting(false) }
+    try {
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+      await Promise.race([sessionsApi.chat(sessionId, text.trim()), timeout])
+      setText(''); onLoad?.()
+    } catch { /* ignore */ } finally { setSubmitting(false) }
   }
 
   return (
