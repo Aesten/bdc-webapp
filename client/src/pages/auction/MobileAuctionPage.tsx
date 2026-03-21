@@ -98,8 +98,8 @@ export default function MobileAuctionPage() {
     </div>
   )
 
-  const { session, activePlayer, upcoming, purchases, captains, progress,
-          auctionName, minIncrement, bidCooldown, currentBid, bidHistory, chatMessages } = detail
+  const { session, purchases, captains, progress,
+          auctionName, minIncrement, currentBid, bidHistory, chatMessages } = detail
   const isLive     = session.status === 'live'
   const isPaused   = session.status === 'paused'
   const isFinished = session.status === 'finished'

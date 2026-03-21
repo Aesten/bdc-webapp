@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Loader2, ArrowUp, X, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { sessionsApi, type SessionQueueEntry } from '@/api/sessions'
-import { CLASS_COLOR, CLASS_ICON, CLASS_TEXT, parseClasses, type ClassKey } from '@/components/tournament/shared'
+import { CLASS_COLOR, CLASS_ICON, parseClasses, type ClassKey } from '@/components/tournament/shared'
 
 const CLASSES: ClassKey[] = ['inf', 'arc', 'cav']
 const CLASS_LABEL: Record<ClassKey, string> = { inf: 'Infantry', arc: 'Archer', cav: 'Cavalry' }
