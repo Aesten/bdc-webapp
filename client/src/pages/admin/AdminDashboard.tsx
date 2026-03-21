@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTitle } from '@/hooks/useTitle'
 import { useAuth } from '@/context/AuthContext'
 import { tournamentsApi, type Tournament } from '@/api/tournaments'
 import { authApi } from '@/api/auth'
@@ -158,6 +159,7 @@ type ModalState =
 // ─── Main shell ───────────────────────────────────────────────────────────────
 
 export default function AdminShell() {
+  useTitle('Admin Dashboard')
   const { logout } = useAuth()
   const navigate   = useNavigate()
 

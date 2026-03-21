@@ -3,8 +3,10 @@ import { useAuth } from '@/context/AuthContext'
 import { LogOut } from 'lucide-react'
 import TournamentDetail from '@/components/tournament/TournamentDetail'
 import logo from '@/assets/logos/bdc_logo_nobg.png'
+import { useTitle } from '@/hooks/useTitle'
 
 export default function AuctioneerShell() {
+  useTitle('Auctioneer Dashboard')
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 

@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom'
 import { tournamentsApi } from '@/api/tournaments'
 import PublicNav from '@/components/PublicNav'
 import { Loader2, ChevronRight } from 'lucide-react'
+import { useTitle } from '@/hooks/useTitle'
 
 type TournamentEntry = { id: number; name: string; slug: string; description: string | null; status: string }
 
 export default function HomePage() {
+  useTitle('BDC')
   const [tournaments, setTournaments] = useState<TournamentEntry[]>([])
   const [loading, setLoading] = useState(true)
 

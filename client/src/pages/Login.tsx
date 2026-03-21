@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTitle } from '@/hooks/useTitle'
 import { Link } from 'react-router-dom'
 import { authApi } from '@/api/auth'
 import { ApiError } from '@/api/client'
@@ -78,6 +79,7 @@ function SubmitBtn({ children, loading, disabled }: { children: React.ReactNode;
 }
 
 export default function Login({ onSuccess }: { onSuccess: () => void }) {
+  useTitle('Sign In')
   const [tab, setTab] = useState<LoginTab>('host')
 
   return (

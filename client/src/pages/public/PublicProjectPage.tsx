@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { tournamentsApi, type PublicTournamentOverview, type PublicDivision, type PublicMatchup, type PublicTeam } from '@/api/tournaments'
+import { useTitle } from '@/hooks/useTitle'
 import type { Captain } from '@/api/auctions'
 import type { Match } from '@/api/brackets'
 import PublicNav from '@/components/PublicNav'
@@ -289,7 +290,7 @@ function TeamCard({ team }: { team: PublicTeam }) {
 
 export default function PublicProjectPage() {
   const { slug } = useParams<{ slug: string }>()
-  const [searchParams]           = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [data,     setData]     = useState<PublicTournamentOverview | null>(null)
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(false)
@@ -298,6 +299,8 @@ export default function PublicProjectPage() {
   const [sharedScale, setSharedScale] = useState(1)
   const finalsRightRef  = useRef<HTMLDivElement>(null)
   const finalsInnerRef  = useRef<HTMLDivElement>(null)
+
+  useTitle(data?.tournament.name ?? 'BDC')
 
   useLayoutEffect(() => {
     const outer = finalsRightRef.current
@@ -316,14 +319,14 @@ export default function PublicProjectPage() {
       .then(d => {
         setData(d)
         const divParam = searchParams.get('div')
-        const viewParam = searchParams.get('view')
+        const tabParam = searchParams.get('tab')
         if (divParam) {
           const idx = d.divisions.findIndex(div => div.auction.id === Number(divParam))
           setTab(idx >= 0 ? idx : 0)
         } else {
           setTab(0)
         }
-        if (viewParam === 'teams') setInnerTab('teams')
+        if (tabParam === 'teams') setInnerTab('teams')
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
@@ -374,7 +377,10 @@ export default function PublicProjectPage() {
       {/* ── Combined tab bar: division tabs | divider | view tabs ── */}
       <div className="flex-shrink-0 border-b border-zinc-800/60 px-[5%] flex items-center gap-0.5">
         {divisions.map((d, i) => (
-          <button key={d.auction.id} onClick={() => setTab(i)}
+          <button key={d.auction.id} onClick={() => {
+            setTab(i)
+            setSearchParams(prev => { const p = new URLSearchParams(prev); p.set('div', String(d.auction.id)); return p }, { replace: true })
+          }}
             className={cn(
               'flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap',
               tab === i ? 'border-amber-500 text-amber-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'
@@ -390,7 +396,10 @@ export default function PublicProjectPage() {
         )}
 
         {([['bracket', 'Brackets'], ['teams', 'Teams']] as const).map(([id, label]) => (
-          <button key={id} onClick={() => setInnerTab(id)}
+          <button key={id} onClick={() => {
+            setInnerTab(id)
+            setSearchParams(prev => { const p = new URLSearchParams(prev); p.set('tab', id); return p }, { replace: true })
+          }}
             className={cn(
               'px-3 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors',
               innerTab === id ? 'border-amber-500 text-amber-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'

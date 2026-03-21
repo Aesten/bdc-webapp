@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { sessionsApi, type SessionDetail, type AuctionSession } from '@/api/sessions'
 import { useWs } from '@/hooks/useWs'
+import { useTitle } from '@/hooks/useTitle'
 import { cn } from '@/lib/utils'
 import { Loader2, Pause, Check, Sword, Users } from 'lucide-react'
 import CurrentPlayerCard from '@/components/auction/CurrentPlayerCard'
@@ -50,6 +51,8 @@ export default function MobileAuctionPage() {
 
   const loadSeqRef = useRef(0)
   const id = Number(sessionId)
+
+  useTitle(detail ? `${detail.auctionName} · Auction` : 'Auction')
 
   const load = useCallback(async () => {
     const seq = ++loadSeqRef.current

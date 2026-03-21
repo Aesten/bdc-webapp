@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { useTitle } from '@/hooks/useTitle'
 import { auctionsApi } from '@/api/auctions'
 import { sessionsApi, type AuctionSession } from '@/api/sessions'
 import { bracketsApi, type PickBanDetail } from '@/api/brackets'
@@ -8,6 +9,7 @@ import { LogOut, Loader2, Check } from 'lucide-react'
 import logo from '@/assets/logos/bdc_logo_nobg.png'
 
 export default function CaptainDashboard() {
+  useTitle('Captain Dashboard')
   const { user, logout, refresh } = useAuth()
   const navigate = useNavigate()
 

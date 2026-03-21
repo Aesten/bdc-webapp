@@ -3,8 +3,10 @@ import { useNavigate, Outlet, Navigate, Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { LogOut } from 'lucide-react'
 import logo from '@/assets/logos/bdc_logo_nobg.png'
+import { useTitle } from '@/hooks/useTitle'
 
 export default function HostLayout() {
+  useTitle('Host Dashboard')
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 

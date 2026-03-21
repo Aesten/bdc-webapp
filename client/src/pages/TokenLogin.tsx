@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useTitle } from '@/hooks/useTitle'
 import { authApi } from '@/api/auth'
 import { useAuth } from '@/context/AuthContext'
 import { Loader2, AlertCircle } from 'lucide-react'
 import logo from '@/assets/logos/bdc_logo_nobg.png'
 
 export default function TokenLogin() {
+  useTitle('Join')
   const [searchParams]  = useSearchParams()
   const navigate        = useNavigate()
   const { refresh }     = useAuth()

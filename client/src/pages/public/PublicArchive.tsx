@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { tournamentsApi } from '@/api/tournaments'
 import PublicNav from '@/components/PublicNav'
 import { Loader2, FolderOpen, ChevronRight } from 'lucide-react'
+import { useTitle } from '@/hooks/useTitle'
 
 type TournamentSummary = {
   id: number; name: string; slug: string
@@ -10,6 +11,7 @@ type TournamentSummary = {
 }
 
 export default function PublicArchive() {
+  useTitle('Tournament Archive')
   const [tournaments, setTournaments] = useState<TournamentSummary[]>([])
   const [loading,     setLoading]     = useState(true)
 

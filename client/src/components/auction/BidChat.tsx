@@ -76,9 +76,9 @@ export default function BidChat({
           <div className="flex items-center justify-center py-6">
             <p className="text-[11px] text-zinc-700 italic">No bids yet</p>
           </div>
-        ) : bidHistory.map((bid, i) => {
+        ) : bidHistory.map((bid) => {
           const isMe  = bid.captain_id === captainId
-          const isTop = i === bidHistory.length - 1
+          const isTop = currentBid ? bid.id === currentBid.id : false
           return (
             <div key={bid.id} className={cn('group flex items-center justify-between px-3 py-1.5 gap-2', isMe && 'bg-amber-500/5')}>
               <span className={cn('text-xs truncate', isMe ? 'text-amber-400' : 'text-zinc-400')}>

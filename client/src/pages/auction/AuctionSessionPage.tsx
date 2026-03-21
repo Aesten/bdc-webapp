@@ -12,6 +12,7 @@ import {
   ChevronRight, Trophy, Flag,
 } from 'lucide-react'
 import { useWs } from '@/hooks/useWs'
+import { useTitle } from '@/hooks/useTitle'
 import CurrentPlayerCard from '@/components/auction/CurrentPlayerCard'
 import AuctioneerControls from '@/components/auction/AuctioneerControls'
 import BidChat from '@/components/auction/BidChat'
@@ -73,6 +74,8 @@ export default function AuctionSessionPage() {
   // 1920px is the design baseline. On wider viewports every rem/px visually grows.
   // transform:scale is used (not zoom) so that compensated width/height prevent overflow.
   const [scale, setScale] = useState(() => Math.max(1, window.innerWidth / 1920))
+
+  useTitle(detail ? `${detail.auctionName} · Auction` : 'Auction')
   useLayoutEffect(() => {
     const apply = () => setScale(Math.max(1, window.innerWidth / 1920))
     window.addEventListener('resize', apply)

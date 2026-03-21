@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useWs } from '@/hooks/useWs'
+import { useTitle } from '@/hooks/useTitle'
 import { bracketsApi, type PickBanSession, type PickBanBan, type PickBanMapDetail, type PickBanCaptainDetail } from '@/api/brackets'
 import { factionsApi, type Faction } from '@/api/maps'
 import { useAuth } from '@/context/AuthContext'
@@ -202,6 +203,11 @@ export default function PickBanPage() {
 
   const isCaptain = user?.role === 'captain'
   const isHost    = user?.role === 'host' || user?.role === 'admin'
+
+  const pickBanTitle = captainA && captainB
+    ? `${captainA.display_name} vs ${captainB.display_name} · Pick & Ban`
+    : 'Pick & Ban'
+  useTitle(pickBanTitle)
 
   const load = useCallback(async () => {
     if (!sessionId) return

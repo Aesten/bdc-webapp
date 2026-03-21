@@ -4,6 +4,7 @@ import { auctionsApi, type AuctionResultTeam } from '@/api/auctions'
 import PublicNav from '@/components/PublicNav'
 import { Loader2, Trophy, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTitle } from '@/hooks/useTitle'
 
 // ─── Team card ────────────────────────────────────────────────────────────────
 
@@ -72,6 +73,8 @@ export default function PublicTeamsPage() {
   const [auctionName, setAuctionName] = useState('')
   const [loading,     setLoading]     = useState(true)
   const [error,       setError]       = useState('')
+
+  useTitle(auctionName ? `${auctionName} · Teams` : 'Teams')
 
   useEffect(() => {
     const id = Number(auctionId)

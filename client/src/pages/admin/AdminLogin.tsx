@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useTitle } from '@/hooks/useTitle'
 import { authApi } from '@/api/auth'
 import { ApiError } from '@/api/client'
 import { Loader2, AlertCircle } from 'lucide-react'
 import logo from '@/assets/logos/bdc_logo_nobg.png'
 
 export default function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
+  useTitle('Admin Sign In')
   const [password, setPassword] = useState('')
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
