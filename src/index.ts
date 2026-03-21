@@ -67,5 +67,3 @@ app.get('/ws/pickban/:sessionId', upgradeWebSocket((c) => {
 const PORT = Number(process.env.PORT ?? 3000)
 Bun.serve({ fetch: app.fetch, port: PORT, websocket })
 console.log(`[server] Running on http://localhost:${PORT}`)
-
-export default app
