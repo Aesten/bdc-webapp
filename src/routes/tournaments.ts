@@ -258,7 +258,7 @@ tournaments.get('/public/:slug', (c) => {
   })
 
   const matchups = queryAll(
-    `SELECT mu.id, mu.round, mu.label,
+    `SELECT mu.id, mu.bracket_id, mu.round, mu.label,
             mp.name as map_name, mp.game_id as map_game_id, mp.image_path as map_image,
             fa.name as faction_a_name, fb.name as faction_b_name
      FROM matchups mu

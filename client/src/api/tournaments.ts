@@ -32,6 +32,7 @@ export interface PublicTeam {
 
 export interface PublicMatchup {
   id:              number
+  bracket_id:      number | null
   round:           number
   label:           string | null
   map_name:        string | null

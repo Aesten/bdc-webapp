@@ -343,7 +343,10 @@ export default function PublicProjectPage() {
   )
 
   const { tournament, divisions, matchups } = data
-  const activeDivision = divisions[tab] ?? divisions[0] ?? null
+  const activeDivision  = divisions[tab] ?? divisions[0] ?? null
+  const bracketId       = activeDivision?.matches[0]?.bracket_id ?? null
+  // Show shared matchups (bracket_id null) + this division's finals matchup
+  const divisionMatchups = matchups.filter(m => m.bracket_id === null || m.bracket_id === bracketId)
   const noop           = async (_id: number, _a: number, _b: number) => {}
 
   const captains        = activeDivision ? teamsAsCaptains(activeDivision) : []
@@ -464,7 +467,7 @@ export default function PublicProjectPage() {
 
             {/* Matchups panel — 20% width */}
             <div className="w-1/5 flex-shrink-0">
-              <MatchupsPanel matchups={matchups} />
+              <MatchupsPanel matchups={divisionMatchups} />
             </div>
           </div>
         )}

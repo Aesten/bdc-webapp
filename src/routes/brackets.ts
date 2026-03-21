@@ -346,72 +346,88 @@ brackets.patch('/matches/:matchId/result', requireAuth('admin', 'host'), async (
     : data.score_b > data.score_a ? match.captain_b_id
     : null
 
+  // Helper: recalculate group standings and assign semi-final slots
+  function recalcGroup(bracketId: number, grp: string) {
+    const groupMatches = queryAll<Match>(
+      `SELECT * FROM matches WHERE bracket_id = ? AND group_label = ?`, [bracketId, grp]
+    )
+    if (!groupMatches.every(gm => gm.status === 'played')) return
+    const captainIds = new Set<number>()
+    for (const gm of groupMatches) {
+      if (gm.captain_a_id) captainIds.add(gm.captain_a_id)
+      if (gm.captain_b_id) captainIds.add(gm.captain_b_id)
+    }
+    const standings = new Map<number, { wins: number; gd: number }>()
+    for (const cid of captainIds) standings.set(cid, { wins: 0, gd: 0 })
+    for (const gm of groupMatches) {
+      if (gm.winner_captain_id && standings.has(gm.winner_captain_id))
+        standings.get(gm.winner_captain_id)!.wins++
+      if (gm.captain_a_id && standings.has(gm.captain_a_id))
+        standings.get(gm.captain_a_id)!.gd += (gm.score_a ?? 0) - (gm.score_b ?? 0)
+      if (gm.captain_b_id && standings.has(gm.captain_b_id))
+        standings.get(gm.captain_b_id)!.gd += (gm.score_b ?? 0) - (gm.score_a ?? 0)
+    }
+    const sorted = [...captainIds].sort((a, b) => {
+      const sa = standings.get(a)!; const sb = standings.get(b)!
+      return sb.wins !== sa.wins ? sb.wins - sa.wins : sb.gd - sa.gd
+    })
+    const [first, second] = sorted
+    const sf1 = queryOne<Match>(`SELECT * FROM matches WHERE bracket_id = ? AND round = 4 AND match_order = 0`, [bracketId])
+    const sf2 = queryOne<Match>(`SELECT * FROM matches WHERE bracket_id = ? AND round = 4 AND match_order = 1`, [bracketId])
+    if (grp === 'A') {
+      if (sf1) execute('UPDATE matches SET captain_a_id = ? WHERE id = ?', [first, sf1.id])
+      if (sf2) execute('UPDATE matches SET captain_b_id = ? WHERE id = ?', [second, sf2.id])
+    } else {
+      if (sf2) execute('UPDATE matches SET captain_a_id = ? WHERE id = ?', [first, sf2.id])
+      if (sf1) execute('UPDATE matches SET captain_b_id = ? WHERE id = ?', [second, sf1.id])
+    }
+  }
+
   transaction(() => {
     execute(
       `UPDATE matches SET score_a = ?, score_b = ?, winner_captain_id = ?, status = 'played' WHERE id = ?`,
       [data.score_a, data.score_b, winnerId, matchId]
     )
 
-    // For knockout rounds (semi-finals round 4 → finals round 5), auto-propagate the winner
-    if (winnerId !== null && match.round >= 4) {
-      const nextMatch = queryOne<Match>(
-        `SELECT * FROM matches
-         WHERE bracket_id = ? AND round = ? AND (captain_a_id IS NULL OR captain_b_id IS NULL)
-         ORDER BY match_order ASC LIMIT 1`,
-        [match.bracket_id, match.round + 1]
-      )
-      if (nextMatch) {
-        if (nextMatch.captain_a_id === null) {
-          execute('UPDATE matches SET captain_a_id = ? WHERE id = ?', [winnerId, nextMatch.id])
-        } else {
-          execute('UPDATE matches SET captain_b_id = ? WHERE id = ?', [winnerId, nextMatch.id])
-        }
-      }
-    }
-
-    // Group stage → semi-finals auto-advancement
     if (match.round <= 3 && match.group_label) {
-      const groupMatches = queryAll<Match>(
-        `SELECT * FROM matches WHERE bracket_id = ? AND group_label = ?`,
-        [match.bracket_id, match.group_label]
+      // Cascade: clear all knockout participants and results, delete pick-ban
+      execute(
+        `UPDATE matches SET captain_a_id = NULL, captain_b_id = NULL,
+           score_a = NULL, score_b = NULL, winner_captain_id = NULL, status = 'pending'
+         WHERE bracket_id = ? AND round >= 4`,
+        [match.bracket_id]
       )
-      if (groupMatches.every(gm => gm.status === 'played')) {
-        const captainIds = new Set<number>()
-        for (const gm of groupMatches) {
-          if (gm.captain_a_id) captainIds.add(gm.captain_a_id)
-          if (gm.captain_b_id) captainIds.add(gm.captain_b_id)
-        }
-        const standings = new Map<number, { wins: number; gd: number }>()
-        for (const cid of captainIds) standings.set(cid, { wins: 0, gd: 0 })
-        for (const gm of groupMatches) {
-          if (gm.winner_captain_id && standings.has(gm.winner_captain_id)) {
-            standings.get(gm.winner_captain_id)!.wins++
-          }
-          if (gm.captain_a_id && standings.has(gm.captain_a_id)) {
-            standings.get(gm.captain_a_id)!.gd += (gm.score_a ?? 0) - (gm.score_b ?? 0)
-          }
-          if (gm.captain_b_id && standings.has(gm.captain_b_id)) {
-            standings.get(gm.captain_b_id)!.gd += (gm.score_b ?? 0) - (gm.score_a ?? 0)
-          }
-        }
-        const sorted = [...captainIds].sort((a, b) => {
-          const sa = standings.get(a)!; const sb = standings.get(b)!
-          return sb.wins !== sa.wins ? sb.wins - sa.wins : sb.gd - sa.gd
-        })
-        const [first, second] = sorted
-        const sf1 = queryOne<Match>(
-          `SELECT * FROM matches WHERE bracket_id = ? AND round = 4 AND match_order = 0`, [match.bracket_id]
-        )
-        const sf2 = queryOne<Match>(
-          `SELECT * FROM matches WHERE bracket_id = ? AND round = 4 AND match_order = 1`, [match.bracket_id]
-        )
-        if (match.group_label === 'A') {
-          if (sf1) execute('UPDATE matches SET captain_a_id = ? WHERE id = ?', [first, sf1.id])
-          if (sf2) execute('UPDATE matches SET captain_b_id = ? WHERE id = ?', [second, sf2.id])
-        } else {
-          if (sf2) execute('UPDATE matches SET captain_a_id = ? WHERE id = ?', [first, sf2.id])
-          if (sf1) execute('UPDATE matches SET captain_b_id = ? WHERE id = ?', [second, sf1.id])
-        }
+      const finalsMatch = queryOne<Match>(`SELECT * FROM matches WHERE bracket_id = ? AND is_finals = 1`, [match.bracket_id])
+      if (finalsMatch) {
+        execute('DELETE FROM pick_ban_sessions WHERE match_id = ?', [finalsMatch.id])
+        execute('DELETE FROM matchups WHERE bracket_id = ? AND round >= 4', [match.bracket_id])
+      }
+      // Re-run advancement for both groups
+      recalcGroup(match.bracket_id, 'A')
+      recalcGroup(match.bracket_id, 'B')
+
+    } else if (match.round === 4) {
+      // Cascade: clear finals participants and result, delete pick-ban
+      execute(
+        `UPDATE matches SET captain_a_id = NULL, captain_b_id = NULL,
+           score_a = NULL, score_b = NULL, winner_captain_id = NULL, status = 'pending'
+         WHERE bracket_id = ? AND round = 5`,
+        [match.bracket_id]
+      )
+      const finalsMatch = queryOne<Match>(`SELECT * FROM matches WHERE bracket_id = ? AND is_finals = 1`, [match.bracket_id])
+      if (finalsMatch) {
+        execute('DELETE FROM pick_ban_sessions WHERE match_id = ?', [finalsMatch.id])
+        execute('DELETE FROM matchups WHERE bracket_id = ? AND round >= 4', [match.bracket_id])
+      }
+      // Re-propagate both semi-final winners to finals
+      const semis = queryAll<Match>(
+        `SELECT * FROM matches WHERE bracket_id = ? AND round = 4 ORDER BY match_order ASC`, [match.bracket_id]
+      )
+      const finals = queryOne<Match>(`SELECT * FROM matches WHERE bracket_id = ? AND round = 5`, [match.bracket_id])
+      if (finals) {
+        const winners = semis.filter(s => s.winner_captain_id !== null).map(s => s.winner_captain_id!)
+        if (winners[0] != null) execute('UPDATE matches SET captain_a_id = ? WHERE id = ?', [winners[0], finals.id])
+        if (winners[1] != null) execute('UPDATE matches SET captain_b_id = ? WHERE id = ?', [winners[1], finals.id])
       }
     }
   })

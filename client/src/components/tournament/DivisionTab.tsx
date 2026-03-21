@@ -491,10 +491,9 @@ export default function DivisionTab({ auction, slug, role, project }: {
                     )
                     return (
                       <button onClick={startPickBan} disabled={startingPickBan || !bothFinalists}
-                        title={!bothFinalists ? 'Both finalists must be decided first' : undefined}
                         className="mt-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs font-semibold hover:bg-zinc-700 transition-colors w-full disabled:opacity-40 disabled:cursor-not-allowed">
                         {startingPickBan ? <Loader2 className="w-3 h-3 animate-spin" /> : <Swords className="w-3 h-3" />}
-                        Start Pick-Ban
+                        {!bothFinalists ? 'Awaiting finalists' : 'Start Pick-Ban'}
                       </button>
                     )
                   }
