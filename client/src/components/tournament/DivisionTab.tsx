@@ -24,9 +24,9 @@ const MAX_CAPTAINS = 8
 // ─── Placeholder knockout matches (shown before bracket is generated) ─────────
 
 const PLACEHOLDER_KNOCKOUT: Match[] = [
-  { id: -100, bracket_id: -1, round: 4, match_order: 0, match_label: 'Semi-Final 1', group_label: null, captain_a_id: null, captain_b_id: null, matchup_id: null, score_a: null, score_b: null, winner_captain_id: null, status: 'pending', is_finals: 0, notes: null },
-  { id: -101, bracket_id: -1, round: 4, match_order: 1, match_label: 'Semi-Final 2', group_label: null, captain_a_id: null, captain_b_id: null, matchup_id: null, score_a: null, score_b: null, winner_captain_id: null, status: 'pending', is_finals: 0, notes: null },
-  { id: -102, bracket_id: -1, round: 5, match_order: 0, match_label: 'Final',        group_label: null, captain_a_id: null, captain_b_id: null, matchup_id: null, score_a: null, score_b: null, winner_captain_id: null, status: 'pending', is_finals: 1, notes: null },
+  { id: -100, bracket_id: -1, round: 4, match_order: 0, match_label: 'Semi-Final 1', group_label: null, captain_a_id: null, captain_b_id: null, matchup_id: null, score_a: null, score_b: null, winner_captain_id: null, status: 'pending', is_finals: 0 },
+  { id: -101, bracket_id: -1, round: 4, match_order: 1, match_label: 'Semi-Final 2', group_label: null, captain_a_id: null, captain_b_id: null, matchup_id: null, score_a: null, score_b: null, winner_captain_id: null, status: 'pending', is_finals: 0 },
+  { id: -102, bracket_id: -1, round: 5, match_order: 0, match_label: 'Final',        group_label: null, captain_a_id: null, captain_b_id: null, matchup_id: null, score_a: null, score_b: null, winner_captain_id: null, status: 'pending', is_finals: 1 },
 ]
 
 // ─── Division tab ─────────────────────────────────────────────────────────────

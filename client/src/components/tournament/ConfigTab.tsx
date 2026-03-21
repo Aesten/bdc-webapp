@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { tournamentsApi, type Tournament } from '@/api/tournaments'
 import { authApi } from '@/api/auth'

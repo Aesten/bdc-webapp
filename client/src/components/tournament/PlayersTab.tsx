@@ -19,7 +19,7 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
   const [sortBy,      setSortBy]      = useState<'name' | 'inf' | 'arc' | 'cav'>('name')
   const [sortAsc,     setSortAsc]     = useState(true)
   const [filterClass, setFilterClass] = useState<ClassKey | null>(null)
-  const [hideUnavail, setHideUnavail] = useState(false)
+  const [hideUnavail] = useState(false)
   const [editId,      setEditId]      = useState<number | null>(null)
   const [editName,    setEditName]    = useState('')
   const [editClasses, setEditClasses] = useState<Set<ClassKey>>(new Set())

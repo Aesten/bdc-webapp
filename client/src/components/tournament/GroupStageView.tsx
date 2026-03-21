@@ -35,7 +35,7 @@ function buildPlaceholder(group: 'A' | 'B', captains: Captain[]): Match[] {
         match_label: `Group ${group}`, group_label: group,
         captain_a_id: null, captain_b_id: null, matchup_id: null,
         score_a: null, score_b: null, winner_captain_id: null,
-        status: 'pending', is_finals: 0, notes: null,
+        status: 'pending', is_finals: 0,
         team_a_name: names[a], team_b_name: names[b],
       })
     }
