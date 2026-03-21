@@ -50,7 +50,7 @@ export default function FreeChat({ sessionId, messages, onLoad, className }: {
                 <span className={cn('font-semibold mr-1.5', ROLE_COLOR[msg.author_role] ?? 'text-zinc-400')}>
                   {msg.author_name}
                 </span>
-                <span className="text-zinc-400">{msg.content}</span>
+                <span className="text-zinc-400 break-all">{msg.content}</span>
               </div>
             ))
         }

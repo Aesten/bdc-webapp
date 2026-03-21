@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import {
   sessionsApi,
@@ -51,6 +51,11 @@ function StatusBadge({ status }: { status: AuctionSession['status'] }) {
 export default function AuctionSessionPage() {
   const { slug, sessionId } = useParams<{ slug: string; sessionId: string }>()
   const { user }            = useAuth()
+  const navigate            = useNavigate()
+
+  useEffect(() => {
+    if (window.innerWidth < 768) navigate(`/t/${slug}/auction/${sessionId}/mobile`, { replace: true })
+  }, [])
 
   const [detail,      setDetail]      = useState<SessionDetail | null>(null)
   const [loading,     setLoading]     = useState(true)
