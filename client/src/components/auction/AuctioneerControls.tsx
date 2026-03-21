@@ -77,7 +77,7 @@ export default function AuctioneerControls({
     setBusy(true); setModalError('')
     try {
       if (!captainId) { setModalError('Select a captain'); setBusy(false); return }
-      await sessionsApi.bid(sessionId, { amount: Number(price) || minIncrement, captain_id: Number(captainId) })
+      await sessionsApi.bid(sessionId, { amount: price === '' ? minIncrement : Number(price), captain_id: Number(captainId) })
       onRefresh(); setShowOverride(false)
     } catch (e: unknown) { setModalError(e instanceof Error ? e.message : 'Failed') }
     finally { setBusy(false) }
