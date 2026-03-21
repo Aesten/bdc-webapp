@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { playersApi, type Player } from '@/api/players'
 import { cn } from '@/lib/utils'
-import { Loader2, Plus, Check, X, Trash2, Pencil, Upload, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react'
+import { Loader2, Plus, Check, X, Trash2, Pencil, Upload, AlertTriangle, CheckCircle2, XCircle, Download, LayoutGrid, List } from 'lucide-react'
 import {
   CLASSES, type ClassKey, CLASS_COLOR, CLASS_TEXT, CLASS_ICON,
   parseClasses, ClassToggle, type ViewRole,
@@ -9,6 +9,8 @@ import {
 
 import { useToast } from '@/context/ToastContext'
 import ImportModal from './ImportModal'
+
+type AvailFilter = 'all' | 'available' | 'unavailable'
 
 // ─── Players tab ──────────────────────────────────────────────────────────────
 
@@ -19,9 +21,10 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
   const [search,      setSearch]      = useState('')
   const [sortBy,      setSortBy]      = useState<'name' | 'inf' | 'arc' | 'cav'>('name')
   const [sortAsc,     setSortAsc]     = useState(true)
-  const [filterClass, setFilterClass] = useState<ClassKey | null>(null)
-  const [hideUnavail] = useState(false)
-  const [editId,      setEditId]      = useState<number | null>(null)
+  const [filterClass,  setFilterClass]  = useState<ClassKey | null>(null)
+  const [availFilter,  setAvailFilter]  = useState<AvailFilter>('all')
+  const [compactView,  setCompactView]  = useState(false)
+  const [editId,       setEditId]       = useState<number | null>(null)
   const [editName,    setEditName]    = useState('')
   const [editClasses, setEditClasses] = useState<Set<ClassKey>>(new Set())
   const [showImport,  setShowImport]  = useState(false)
@@ -47,9 +50,23 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
     else { setSortBy(col); setSortAsc(true) }
   }
 
+  function exportCsv() {
+    const rows = [['name', 'is_inf', 'is_arc', 'is_cav']]
+    filtered.forEach(p => {
+      const cls = parseClasses(p.classes)
+      rows.push([p.name, cls.includes('inf') ? 'x' : '', cls.includes('arc') ? 'x' : '', cls.includes('cav') ? 'x' : ''])
+    })
+    const csv = rows.map(r => r.join(',')).join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    a.download = 'players.csv'
+    a.click()
+  }
+
   const filtered = players
     .filter(p => {
-      if (hideUnavail && !p.is_available) return false
+      if (availFilter === 'available'   && !p.is_available) return false
+      if (availFilter === 'unavailable' &&  p.is_available) return false
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
       if (filterClass && !parseClasses(p.classes).includes(filterClass)) return false
       return true
@@ -124,7 +141,29 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
         </div>
 
 
+        {/* Availability filter */}
+        <div className="flex rounded-xl overflow-hidden border border-zinc-800 text-xs font-medium">
+          {(['all', 'available', 'unavailable'] as AvailFilter[]).map(f => (
+            <button key={f} onClick={() => setAvailFilter(f)}
+              className={cn('px-2.5 py-2 capitalize transition-colors',
+                availFilter === f ? 'bg-zinc-700 text-zinc-100' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-300')}>
+              {f}
+            </button>
+          ))}
+        </div>
+
         <span className="text-sm text-zinc-700 font-mono">{filtered.length}/{players.length}</span>
+
+        <button onClick={() => setCompactView(v => !v)}
+          title={compactView ? 'List view' : 'Grid view'}
+          className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition-colors">
+          {compactView ? <List className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+        </button>
+
+        <button onClick={exportCsv} title="Export CSV"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium transition-colors">
+          <Download className="w-3.5 h-3.5" /> Export
+        </button>
 
         {canManage && (
           <button onClick={() => setShowImport(true)}
@@ -142,8 +181,47 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
         </div>
       )}
 
+      {/* Compact grid view */}
+      {compactView && (
+        <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          {filtered.length === 0 ? (
+            <p className="col-span-full text-center text-sm text-zinc-700 py-8">No players match the filter</p>
+          ) : filtered.map(p => {
+            const cls = parseClasses(p.classes)
+            return (
+              <div key={p.id} className={cn(
+                'group relative flex flex-col gap-1 px-2.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800',
+                !p.is_available && 'opacity-40'
+              )}>
+                <span className="text-xs text-zinc-200 truncate font-medium leading-tight">{p.name}</span>
+                <div className="flex gap-1">
+                  {CLASSES.map(c => {
+                    const Icon = CLASS_ICON[c]
+                    return cls.includes(c)
+                      ? <Icon key={c} className={cn('w-3.5 h-3.5', CLASS_TEXT[c])} />
+                      : null
+                  })}
+                </div>
+                {canManage && (
+                  <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
+                    <button onClick={() => { setEditId(p.id); setEditName(p.name); setEditClasses(new Set(cls)); setCompactView(false) }}
+                      className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 transition-colors">
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    <button onClick={() => remove(p.id)}
+                      className="p-1 rounded bg-zinc-800 hover:bg-red-400/10 text-zinc-500 hover:text-red-400 transition-colors">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {/* Table */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+      {!compactView && <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
 
         {/* Column headers */}
         <div className="flex items-center gap-0 px-4 py-2.5 border-b border-zinc-800">
@@ -276,7 +354,7 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
             </button>
           </div>
         )}
-      </div>
+      </div>}
 
       {showImport && (
         <ImportModal

@@ -155,7 +155,7 @@ sessions.get('/:id', requireAuth('admin', 'host', 'auctioneer', 'captain'), asyn
     ? queryOne<SessionBid>(
         `SELECT * FROM session_bids
          WHERE session_id = ? AND queue_entry_id = ?
-         ORDER BY id DESC LIMIT 1`,
+         ORDER BY amount DESC, id DESC LIMIT 1`,
         [id, activePlayer.id]
       )
     : null
@@ -424,7 +424,7 @@ sessions.post('/:id/advance', requireAuth('admin', 'auctioneer'), async (c) => {
         ? queryOne<SessionBid>(
             `SELECT * FROM session_bids
              WHERE session_id = ? AND queue_entry_id = ?
-             ORDER BY id DESC LIMIT 1`,
+             ORDER BY amount DESC, id DESC LIMIT 1`,
             [id, activeEntryForBid.id]
           )
         : null
@@ -610,10 +610,9 @@ sessions.post('/:id/bid', requireAuth('admin', 'auctioneer', 'captain'), async (
     if (amount < 0) return c.json({ error: 'Bid amount cannot be negative' }, 400)
   }
 
-  // Atomic read-validate-write: re-read topBid, validate the floor, and insert in one transaction.
-  // Because the transaction callback is synchronous and JS is single-threaded, two concurrent
-  // requests cannot interleave here — the second one will see the first bid already committed
-  // and correctly fail the floor check.
+  // Validate and insert in one transaction. topBid is ordered by amount DESC so that even if
+  // two bids slip through concurrently, the highest bid is always the floor baseline — a lower
+  // bid getting a higher id can never displace a higher bid as the current top.
   const captainName = captain.display_name
   let bidError: string | null = null
   let newBid: SessionBid | null = null
@@ -621,7 +620,7 @@ sessions.post('/:id/bid', requireAuth('admin', 'auctioneer', 'captain'), async (
   transaction(() => {
     const topBid = queryOne<SessionBid>(
       `SELECT * FROM session_bids WHERE session_id = ? AND queue_entry_id = ?
-       ORDER BY id DESC LIMIT 1`,
+       ORDER BY amount DESC, id DESC LIMIT 1`,
       [id, activeEntry.id]
     )
 
@@ -643,7 +642,7 @@ sessions.post('/:id/bid', requireAuth('admin', 'auctioneer', 'captain'), async (
 
     newBid = queryOne<SessionBid>(
       `SELECT * FROM session_bids WHERE session_id = ? AND queue_entry_id = ?
-       ORDER BY id DESC LIMIT 1`,
+       ORDER BY amount DESC, id DESC LIMIT 1`,
       [id, activeEntry.id]
     )
   })
