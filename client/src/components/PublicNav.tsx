@@ -6,7 +6,7 @@ import { Loader2, LogOut } from 'lucide-react'
 import logo from '@/assets/logos/bdc_logo_nobg.png'
 import { tournamentsApi } from '@/api/tournaments'
 
-let cachedFeaturedHref: string | null = null
+let cachedFeaturedSlug: string | false | null = null  // null = not yet fetched, false = no featured
 
 const DASHBOARD: Record<Role, string> = {
   admin:      '/admin',
@@ -27,10 +27,18 @@ interface Props {
   center?: ReactNode
 }
 
+function buildLogoHref(slug: string | false | null, user: ReturnType<typeof useAuth>['user']): string {
+  if (!slug) return '/'
+  if (user?.role === 'captain' && user.auctionId) {
+    return `/t/${slug}?div=${user.auctionId}&tab=bracket`
+  }
+  return `/t/${slug}`
+}
+
 export default function PublicNav({ extra, center }: Props) {
   const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
-  const [logoHref, setLogoHref] = useState<string>(cachedFeaturedHref ?? '/')
+  const [slug, setSlug] = useState<string | false | null>(cachedFeaturedSlug)
 
   async function handleLogout() {
     await logout()
@@ -38,14 +46,16 @@ export default function PublicNav({ extra, center }: Props) {
   }
 
   useEffect(() => {
-    if (cachedFeaturedHref !== null) return
+    if (cachedFeaturedSlug !== null) return
     tournamentsApi.getFeatured()
       .then(t => {
-        cachedFeaturedHref = t ? `/t/${t.slug}` : '/'
-        setLogoHref(cachedFeaturedHref)
+        cachedFeaturedSlug = t ? t.slug : false
+        setSlug(cachedFeaturedSlug)
       })
-      .catch(() => { cachedFeaturedHref = '/'; setLogoHref('/') })
+      .catch(() => { cachedFeaturedSlug = false; setSlug(false) })
   }, [])
+
+  const logoHref = buildLogoHref(slug, user)
 
   return (
     <header className="relative flex-shrink-0 sticky top-0 z-30 border-b border-zinc-800" style={{ backgroundColor: '#212022' }}>

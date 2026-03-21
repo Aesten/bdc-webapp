@@ -316,21 +316,24 @@ export default function PublicProjectPage() {
   useEffect(() => {
     if (!slug) return
     tournamentsApi.getPublic(slug)
-      .then(d => {
-        setData(d)
-        const divParam = searchParams.get('div')
-        const tabParam = searchParams.get('tab')
-        if (divParam) {
-          const idx = d.divisions.findIndex(div => div.auction.id === Number(divParam))
-          setTab(idx >= 0 ? idx : 0)
-        } else {
-          setTab(0)
-        }
-        if (tabParam === 'teams') setInnerTab('teams')
-      })
+      .then(d => { setData(d) })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [slug])
+
+  // Sync tab state from URL params whenever params or loaded data change
+  useEffect(() => {
+    if (!data) return
+    const divParam = searchParams.get('div')
+    const tabParam = searchParams.get('tab')
+    if (divParam) {
+      const idx = data.divisions.findIndex(div => div.auction.id === Number(divParam))
+      setTab(idx >= 0 ? idx : 0)
+    } else {
+      setTab(0)
+    }
+    setInnerTab(tabParam === 'teams' ? 'teams' : 'bracket')
+  }, [data, searchParams])
 
   if (loading) return (
     <div className="h-screen bg-zinc-950 flex items-center justify-center">

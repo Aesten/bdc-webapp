@@ -27,10 +27,11 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
   const [editId,       setEditId]       = useState<number | null>(null)
   const [editName,    setEditName]    = useState('')
   const [editClasses, setEditClasses] = useState<Set<ClassKey>>(new Set())
-  const [showImport,  setShowImport]  = useState(false)
-  const [newName,     setNewName]     = useState('')
-  const [newClasses,  setNewClasses]  = useState<Set<ClassKey>>(new Set())
-  const [adding,      setAdding]      = useState(false)
+  const [showImport,   setShowImport]   = useState(false)
+  const [newName,      setNewName]      = useState('')
+  const [newClasses,   setNewClasses]   = useState<Set<ClassKey>>(new Set())
+  const [adding,       setAdding]       = useState(false)
+  const [gridAddOpen,  setGridAddOpen]  = useState(false)
   const canManage = role === 'admin' || role === 'host'
 
   useEffect(() => {
@@ -184,10 +185,31 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
       {/* Compact grid view */}
       {compactView && (
         <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && !canManage && (
             <p className="col-span-full text-center text-sm text-zinc-700 py-8">No players match the filter</p>
-          ) : filtered.map(p => {
+          )}
+          {filtered.map(p => {
             const cls = parseClasses(p.classes)
+            const isEditing = editId === p.id
+            if (isEditing) return (
+              <div key={p.id} className="flex flex-col gap-1.5 px-2.5 py-2 rounded-xl bg-zinc-900 border border-amber-500/40">
+                <input value={editName} onChange={e => setEditName(e.target.value)} autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter') saveEdit(p.id); if (e.key === 'Escape') setEditId(null) }}
+                  className="w-full px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-zinc-100 focus:outline-none" />
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex gap-0.5">
+                    {CLASSES.map(c => (
+                      <ClassToggle key={c} cls={c} active={editClasses.has(c)}
+                        onChange={v => setEditClasses(prev => { const n = new Set(prev); v ? n.add(c) : n.delete(c); return n })} />
+                    ))}
+                  </div>
+                  <div className="flex gap-0.5 flex-shrink-0">
+                    <button onClick={() => saveEdit(p.id)} className="p-1 rounded bg-zinc-800 hover:bg-green-400/10 text-zinc-500 hover:text-green-400 transition-colors"><Check className="w-3 h-3" /></button>
+                    <button onClick={() => setEditId(null)} className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors"><X className="w-3 h-3" /></button>
+                  </div>
+                </div>
+              </div>
+            )
             return (
               <div key={p.id} className={cn(
                 'group relative flex flex-col gap-1 px-2.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800',
@@ -197,14 +219,12 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
                 <div className="flex gap-1">
                   {CLASSES.map(c => {
                     const Icon = CLASS_ICON[c]
-                    return cls.includes(c)
-                      ? <Icon key={c} className={cn('w-3.5 h-3.5', CLASS_TEXT[c])} />
-                      : null
+                    return cls.includes(c) ? <Icon key={c} className={cn('w-3.5 h-3.5', CLASS_TEXT[c])} /> : null
                   })}
                 </div>
                 {canManage && (
                   <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
-                    <button onClick={() => { setEditId(p.id); setEditName(p.name); setEditClasses(new Set(cls)); setCompactView(false) }}
+                    <button onClick={() => { setEditId(p.id); setEditName(p.name); setEditClasses(new Set(cls)) }}
                       className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 transition-colors">
                       <Pencil className="w-3 h-3" />
                     </button>
@@ -217,6 +237,39 @@ export default function PlayersTab({ slug, role }: { slug: string; role: ViewRol
               </div>
             )
           })}
+
+          {/* Add card */}
+          {canManage && (gridAddOpen ? (
+            <div className="flex flex-col gap-1.5 px-2.5 py-2 rounded-xl bg-zinc-900 border border-amber-500/40">
+              <input value={newName} onChange={e => setNewName(e.target.value)} autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') add(); if (e.key === 'Escape') { setGridAddOpen(false); setNewName(''); setNewClasses(new Set()) } }}
+                placeholder="Name…"
+                className="w-full px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none" />
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex gap-0.5">
+                  {CLASSES.map(c => (
+                    <ClassToggle key={c} cls={c} active={newClasses.has(c)}
+                      onChange={v => setNewClasses(prev => { const n = new Set(prev); v ? n.add(c) : n.delete(c); return n })} />
+                  ))}
+                </div>
+                <div className="flex gap-0.5 flex-shrink-0">
+                  <button onClick={add} disabled={adding || !newName.trim()}
+                    className="p-1 rounded bg-zinc-800 hover:bg-green-400/10 text-zinc-500 hover:text-green-400 transition-colors disabled:opacity-40">
+                    {adding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  </button>
+                  <button onClick={() => { setGridAddOpen(false); setNewName(''); setNewClasses(new Set()) }}
+                    className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setGridAddOpen(true)}
+              className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl border border-dashed border-zinc-700 text-zinc-600 hover:text-zinc-400 hover:border-zinc-500 transition-colors min-h-[52px]">
+              <Plus className="w-3.5 h-3.5" /><span className="text-xs">Add</span>
+            </button>
+          ))}
         </div>
       )}
 

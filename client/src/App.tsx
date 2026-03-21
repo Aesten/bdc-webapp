@@ -34,7 +34,7 @@ function PageLoader() {
 
 // Redirect everyone to the featured tournament; show homepage if none
 function RootPage() {
-  const { loading } = useAuth()
+  const { loading, user } = useAuth()
   const navigate = useNavigate()
   const [featuredSlug, setFeaturedSlug] = useState<string | null | undefined>(undefined)
 
@@ -46,7 +46,12 @@ function RootPage() {
   }, [loading, navigate])
 
   useEffect(() => {
-    if (featuredSlug) navigate(`/t/${featuredSlug}`, { replace: true })
+    if (!featuredSlug) return
+    if (user?.role === 'captain' && user.auctionId) {
+      navigate(`/t/${featuredSlug}?div=${user.auctionId}&tab=bracket`, { replace: true })
+    } else {
+      navigate(`/t/${featuredSlug}`, { replace: true })
+    }
   }, [featuredSlug, navigate])
 
   if (loading || featuredSlug === undefined || featuredSlug) return <PageLoader />

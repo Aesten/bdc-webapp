@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, Check, X } from 'lucide-react'
+import { Loader2, Check, X, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { auctionsApi, type AuctionResultTeam } from '@/api/auctions'
 import { useToast } from '@/context/ToastContext'
@@ -69,6 +69,18 @@ export default function AuctionResultsModal({ auctionId, auctionName, canManage,
     } finally { setBusy(false); setConfirm(null) }
   }
 
+  function exportNames() {
+    const lines: string[] = []
+    for (const { captain, players } of teams) {
+      lines.push(captain.display_name)
+      for (const p of players) lines.push(p.player_name)
+    }
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/plain' }))
+    a.download = `${auctionName}-roster.txt`
+    a.click()
+  }
+
   async function handleWipe() {
     setBusy(true)
     try {
@@ -91,6 +103,12 @@ export default function AuctionResultsModal({ auctionId, auctionName, canManage,
             <h2 className="text-base font-bold text-zinc-100">{auctionName}</h2>
           </div>
           <div className="flex items-center gap-2">
+            {!loading && teams.length > 0 && (
+              <button onClick={exportNames} title="Export names"
+                className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors">
+                <Download className="w-4 h-4" />
+              </button>
+            )}
             {canManage && !confirm && (
               <button onClick={() => setEditMode(e => !e)}
                 className={cn('text-xs font-mono px-2.5 py-1 rounded-lg border transition-colors',
