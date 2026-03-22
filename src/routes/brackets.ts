@@ -658,9 +658,9 @@ function safeSession(session: PickBanSession) {
 
 function enrichBans(session: PickBanSession) {
   const bans: PickBanBanEntry[] = JSON.parse(session.bans ?? '[]')
-  return bans.map(b => {
+  return bans.map((b, i) => {
     const map = queryOne<{ name: string }>('SELECT name FROM maps WHERE id = ?', [b.map_id])
-    return { ...b, map_name: map?.name ?? null }
+    return { captain_side: b.side, map_id: b.map_id, ban_index: i, map_name: map?.name ?? null }
   })
 }
 

@@ -110,7 +110,7 @@ function MatchupCard({ label, matchup }: {
   const [copied, setCopied] = useState(false)
   const rolled  = !!matchup?.map_name
   const command = rolled
-    ? `!setmap ${matchup!.map_game_id ?? matchup!.map_name} ${(matchup!.faction_a_name ?? '?').toLowerCase()} ${(matchup!.faction_b_name ?? '?').toLowerCase()}`
+    ? `!setmap ${matchup!.map_game_id ?? matchup!.map_name?.toLowerCase().replace(/[^a-z0-9]/g, '')} ${(matchup!.faction_a_name ?? '?').toLowerCase()} ${(matchup!.faction_b_name ?? '?').toLowerCase()}`
     : '!setmap <map> <fac1> <fac2>'
 
   function handleCopy() {

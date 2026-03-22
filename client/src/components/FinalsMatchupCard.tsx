@@ -30,8 +30,9 @@ export default function FinalsMatchupCard({ mapImage, mapName, mapGameId, factio
 }) {
   const [copied, setCopied] = useState(false)
   const ready = !!(mapName && factionAName && factionBName)
+  const mapCmd = mapGameId ?? mapName?.toLowerCase().replace(/[^a-z0-9]/g, '')
   const command = ready
-    ? `!setmap ${mapGameId ?? mapName} ${factionAName!.toLowerCase()} ${factionBName!.toLowerCase()}`
+    ? `!setmap ${mapCmd} ${factionAName!.toLowerCase()} ${factionBName!.toLowerCase()}`
     : '!setmap <map> <fac1> <fac2>'
 
   function handleCopy() {

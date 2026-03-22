@@ -52,19 +52,53 @@ function MapCard({ map, banned, bannedBy, selected }: {
   )
 }
 
-function CaptainCard({ side, captain, joined }: {
-  side: 'a' | 'b'; captain: PickBanCaptainDetail | null; joined: boolean
+function captainStatus(side: 'a' | 'b', session: PickBanSession, banSeq: ('a' | 'b')[]) {
+  const joined      = side === 'a' ? !!session.a_joined : !!session.b_joined
+  const otherJoined = side === 'a' ? !!session.b_joined : !!session.a_joined
+  const hasPicked   = side === 'a' ? session.a_pick !== null : session.b_pick !== null
+  const otherPicked = side === 'a' ? session.b_pick !== null : session.a_pick !== null
+  const isMyTurn    = session.status === 'banning' && banSeq[session.ban_turn] === side
+
+  switch (session.status) {
+    case 'waiting':
+      if (!joined)      return { label: 'Waiting to join',           dot: 'bg-zinc-600',  pulse: false, done: false }
+      if (!otherJoined) return { label: 'Joined — awaiting opponent', dot: 'bg-green-400', pulse: false, done: false }
+      return                   { label: 'Ready',                     dot: 'bg-green-400', pulse: false, done: false }
+    case 'banning':
+      return isMyTurn
+        ?                      { label: 'Banning…',                  dot: 'bg-side',      pulse: true,  done: false }
+        :                      { label: 'Waiting…',                  dot: 'bg-zinc-600',  pulse: false, done: false }
+    case 'picking':
+      if (!hasPicked)   return { label: 'Picking faction…',          dot: 'bg-side',      pulse: true,  done: false }
+      if (!otherPicked) return { label: 'Waiting for opponent…',     dot: 'bg-zinc-600',  pulse: false, done: false }
+      return                   { label: 'Locked in',                 dot: 'bg-amber-400', pulse: false, done: false }
+    case 'complete':
+      return                   { label: 'Complete',                  dot: 'bg-green-400', pulse: false, done: true }
+    default:
+      return                   { label: '—',                         dot: 'bg-zinc-600',  pulse: false, done: false }
+  }
+}
+
+function CaptainCard({ side, captain, session, banSeq }: {
+  side: 'a' | 'b'; captain: PickBanCaptainDetail | null; session: PickBanSession; banSeq: ('a' | 'b')[]
 }) {
-  const s = SIDE[side]
+  const s      = SIDE[side]
+  const status = captainStatus(side, session, banSeq)
+  const dotCn  = status.dot === 'bg-side' ? (side === 'a' ? 'bg-blue-400' : 'bg-violet-400') : status.dot
   return (
-    <div className={cn('flex items-center gap-3 px-4 py-3 rounded-xl border',
-      joined ? 'bg-green-500/10 border-green-500/25' : `${s.bg} ${s.border}`)}>
-      <div className={cn('w-2 h-2 rounded-full flex-shrink-0', joined ? 'bg-green-400' : 'bg-zinc-600')} />
-      <div className="min-w-0">
-        <p className={cn('text-sm font-bold truncate', joined ? 'text-green-300' : s.text)}>
-          {captain?.team_name || captain?.display_name || s.label}
-        </p>
-        <p className="text-[10px] font-mono text-zinc-600">{joined ? 'Ready' : 'Waiting…'}</p>
+    <div className={cn('flex items-center gap-3 px-4 py-3 rounded-xl border', s.bg, s.border)}>
+      <div className={cn('w-2 h-2 rounded-full flex-shrink-0', dotCn, status.pulse && 'animate-pulse')} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <p className={cn('text-sm font-bold truncate', status.done ? 'text-green-300' : s.text)}>
+            {captain?.display_name || captain?.team_name || s.label}
+          </p>
+          <span className={cn('text-[9px] font-mono px-1.5 py-0.5 rounded border flex-shrink-0', s.text,
+            side === 'a' ? 'bg-blue-500/10 border-blue-500/20' : 'bg-violet-500/10 border-violet-500/20')}>
+            {s.label}
+          </span>
+        </div>
+        <p className="text-[10px] font-mono text-zinc-500">{status.label}</p>
       </div>
     </div>
   )
@@ -265,9 +299,55 @@ export default function PickBanModal({ sessionId, onDeleted, onClose }: {
 
               {/* Captains */}
               <div className="grid grid-cols-2 gap-3">
-                <CaptainCard side="a" captain={captainA} joined={!!session.a_joined} />
-                <CaptainCard side="b" captain={captainB} joined={!!session.b_joined} />
+                <CaptainCard side="a" captain={captainA} session={session} banSeq={banSeq} />
+                <CaptainCard side="b" captain={captainB} session={session} banSeq={banSeq} />
               </div>
+
+              {/* Event log */}
+              {bans.length > 0 && (() => {
+                const captainName = (side: 'a' | 'b') => {
+                  const cap = side === 'a' ? captainA : captainB
+                  return cap?.display_name || cap?.team_name || `Side ${side.toUpperCase()}`
+                }
+                const sortedBans = [...bans].sort((a, b) => a.ban_index - b.ban_index)
+                const survivingMap = remaining.length === 1 ? mapPool.find(m => m.id === remaining[0]) : null
+                const factionA = session.status === 'complete' && session.revealed ? factions.find(f => f.id === (session.a_pick as number)) : null
+                const factionB = session.status === 'complete' && session.revealed ? factions.find(f => f.id === (session.b_pick as number)) : null
+                return (
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 space-y-1.5">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mb-2">Event log</p>
+                    {sortedBans.map((ban, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <span className={ban.captain_side === 'a' ? 'text-blue-400 font-semibold' : 'text-violet-400 font-semibold'}>
+                          {captainName(ban.captain_side)}
+                        </span>
+                        <span className="text-zinc-500">banned</span>
+                        <span className="text-zinc-300">{ban.map_name}</span>
+                      </div>
+                    ))}
+                    {survivingMap && (
+                      <div className="flex items-center gap-2 text-xs pt-0.5 border-t border-zinc-800 mt-1.5">
+                        <span className="text-zinc-500">Surviving map:</span>
+                        <span className="text-amber-400 font-semibold">{survivingMap.name}</span>
+                      </div>
+                    )}
+                    {factionA && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-blue-400 font-semibold">{captainName('a')}</span>
+                        <span className="text-zinc-500">picked</span>
+                        <span className="text-zinc-300">{factionA.name}</span>
+                      </div>
+                    )}
+                    {factionB && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-violet-400 font-semibold">{captainName('b')}</span>
+                        <span className="text-zinc-500">picked</span>
+                        <span className="text-zinc-300">{factionB.name}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* WAITING */}
               {session.status === 'waiting' && (
