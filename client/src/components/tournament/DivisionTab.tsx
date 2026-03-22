@@ -197,6 +197,7 @@ export default function DivisionTab({ auction, slug, role, project }: {
       toast(`Need ${MAX_CAPTAINS} captains to shuffle (have ${captains.length})`, 'error')
       return
     }
+    if (matches.length > 0 && !window.confirm('A bracket already exists. Re-shuffle and overwrite it?')) return
     setShuffling(true)
     try {
       await bracketsApi.generate(bracket.id, captains.map(c => c.id))
