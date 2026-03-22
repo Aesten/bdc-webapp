@@ -454,7 +454,7 @@ export default function PublicProjectPage() {
                     <div ref={finalsRightRef} className="border-l border-zinc-800/60 pl-4 h-full overflow-hidden flex items-center min-w-0 flex-1">
                       <div ref={finalsInnerRef} style={{ zoom: sharedScale }} className="flex gap-2 p-3">
                       {[...new Set(knockoutMatches.map(m => m.round))].sort((a, b) => a - b).map(r => {
-                        const label = r === Math.max(...knockoutMatches.map(m => m.round)) ? 'Final' : `Semi-final ${r}`
+                        const label = r === Math.max(...knockoutMatches.map(m => m.round)) ? 'Final' : 'Semi-finals'
                         const rows = knockoutMatches.filter(m => m.round === r).sort((a, b) => a.match_order - b.match_order)
                         return (
                           <div key={r} className="flex-1 flex flex-col min-w-0">

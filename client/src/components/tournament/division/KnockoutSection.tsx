@@ -104,7 +104,6 @@ export function KnockoutScoreRow({ match, captains, canManage, onSave, showLabel
             {saving ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-2.5 h-2.5" />}
           </button>
         )}
-        {!canManage && played && <Check className="w-2.5 h-2.5 text-green-500 flex-shrink-0" />}
       </div>
     </div>
   )
