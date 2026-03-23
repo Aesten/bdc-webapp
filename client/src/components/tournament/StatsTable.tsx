@@ -46,7 +46,7 @@ export const STAT_COLS: ColDef[] = [
   { key: 'score',           label: 'Score'      },
   { key: 'score_per_round', label: 'S/R',       fmt: 'dec' },
   { key: 'cost',            label: 'Cost',      fmt: 'dec1' },
-  { key: 'cost_per_score',  label: 'C/kS',      fmt: 'dec' },
+  { key: 'cost_per_score',  label: 'Value',     fmt: 'dec' },
   { key: 'kills',           label: 'K'          },
   { key: 'deaths',          label: 'D'          },
   { key: 'assists',         label: 'A'          },
@@ -163,8 +163,8 @@ export default function StatsTable({ rows, config, teams }: {
       ...row,
       auction_name:   auctionName,
       cost,
-      cost_per_score: (cost !== null && cost > 0.1 && row.score > 0)
-        ? (cost * 1000) / row.score
+      cost_per_score: (cost !== null && cost > 0.1 && row.score > 0 && row.score_per_round > 0)
+        ? (cost * 1000) / Math.sqrt(row.score * row.score_per_round)
         : null,
     }
   }), [rows, nameMap, priceByAuctionName])
