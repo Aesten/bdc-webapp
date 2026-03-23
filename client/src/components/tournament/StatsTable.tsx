@@ -228,7 +228,13 @@ export default function StatsTable({ rows, config, teams }: {
   }
 
   return (
-    <div className="flex flex-col w-full h-full min-h-0">
+    <div className="relative flex flex-col w-full h-full min-h-0">
+      <span
+        className="absolute left-0 bottom-0 text-[10px] text-zinc-700 tracking-widest uppercase whitespace-nowrap pointer-events-none select-none"
+        style={{ writingMode: 'vertical-rl', transform: 'translateX(-100%) rotate(180deg)' }}
+      >
+        Courtesy of Krex and Gerry
+      </span>
       {/* Toolbar */}
       <div className="flex-shrink-0 flex items-center justify-between px-1 pb-2">
         <input
