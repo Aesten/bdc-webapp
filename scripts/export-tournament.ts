@@ -405,6 +405,11 @@ const STAT_COLS = [
   { key: 'ranged_pct',      label: 'Ranged%',    fmt: 'pct' },
 ];
 
+function stripClanTag(name) {
+  const stripped = name.replace(/^(\[[^\]]*\]\s*)*/u, '').trim();
+  return stripped || name;
+}
+
 function fmtVal(val, fmt) {
   if (val === null || val === undefined) return '—';
   if (typeof val === 'string') return val;
@@ -585,6 +590,7 @@ function renderStats(div) {
   const conditions = cfg.conditions ?? {};
   const gradients  = cfg.gradients  ?? {};
   const nameMap    = cfg.nameMap    ?? {};
+  const captainSet = new Set(cfg.captains ?? []);
 
   // Build price lookup from teams
   const priceByName = {};
@@ -672,11 +678,18 @@ function renderStats(div) {
         const cls = [
           col.key === 'rank' ? 'col-rank' : col.key === 'name' ? 'col-name' : 'num',
         ].join(' ');
-        const td = h('td', { class: cls },
-          col.key === 'name'
-            ? (row['auction_name'] ?? val ?? '—')
-            : fmtVal(val, col.fmt)
-        );
+        let cellContent;
+        if (col.key === 'name') {
+          const displayName = row['auction_name'] ?? val ?? '—';
+          const isCaptain   = captainSet.has(row['name']);
+          cellContent = h('span', { style: 'display:flex;align-items:center;gap:4px;max-width:180px;overflow:hidden' },
+            isCaptain ? h('span', { style: 'color:#f59e0b;flex-shrink:0;font-size:10px' }, '♛') : null,
+            h('span', { style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, stripClanTag(String(displayName)))
+          );
+        } else {
+          cellContent = fmtVal(val, col.fmt);
+        }
+        const td = h('td', { class: cls }, cellContent);
         if (bg) td.style.backgroundColor = bg;
         return td;
       })

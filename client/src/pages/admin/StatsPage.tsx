@@ -55,6 +55,27 @@ export default function StatsPage() {
         } catch {}
       }
       setTeamsPerAuction(tpa)
+      // Pre-fetch configs for all divisions that already have stats uploaded
+      const slugMap = Object.fromEntries(divs.map(d => [d.auctionId, list.find(l => l.name === d.tournamentName)?.slug ?? '']))
+      const cfgEntries = await Promise.all(
+        divs
+          .filter(d => ids.includes(d.auctionId))
+          .map(async d => {
+            const slug = slugMap[d.auctionId]
+            if (!slug) return null
+            try {
+              const res  = await fetch(`/api/tournaments/public/${slug}/stats/${d.auctionId}`, { credentials: 'include' })
+              const data = res.ok ? await res.json() : null
+              if (data?.rows) {
+                setStatNamesPerAuction(prev => ({ ...prev, [d.auctionId]: data.rows.map((r: any) => r.name as string) }))
+              }
+              return [d.auctionId, data?.config ?? EMPTY_CONFIG] as [number, StatsConfig]
+            } catch {
+              return [d.auctionId, EMPTY_CONFIG] as [number, StatsConfig]
+            }
+          })
+      )
+      setConfigs(Object.fromEntries(cfgEntries.filter(Boolean) as [number, StatsConfig][]))
     } catch (e) {
       console.error('StatsPage load error', e)
     } finally {
@@ -220,6 +241,12 @@ export default function StatsPage() {
           divisionName={configFor.name}
           statNames={statNamesPerAuction[configFor.auctionId] ?? []}
           auctionPlayers={teamsPerAuction[configFor.auctionId] ?? []}
+          otherConfigs={Object.entries(configs)
+            .filter(([id]) => Number(id) !== configFor.auctionId)
+            .map(([id, cfg]) => ({
+              name: divisions.find(d => d.auctionId === Number(id))?.name ?? `Division ${id}`,
+              config: cfg,
+            }))}
           onSave={handleSaveConfig}
           onClose={() => setConfigFor(null)}
         />

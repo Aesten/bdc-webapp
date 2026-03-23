@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { ChevronUp, ChevronDown, Columns3, RotateCcw } from 'lucide-react'
+import { ChevronUp, ChevronDown, Columns3, RotateCcw, Crown } from 'lucide-react'
 
 export interface StatRow {
   rank: number; name: string; played: number; won: number; wr: number
@@ -26,6 +26,13 @@ export interface StatsConfig {
   conditions:    Record<string, ColumnCondition>
   gradients:     Record<string, GradientType>
   nameMap?:      Record<string, string>   // in-game name → auction player name
+  captains?:     string[]                 // auction player names who are captains
+}
+
+/** Strip leading clan tags like [TAG1] [TAG2] from a display name */
+export function stripClanTag(name: string): string {
+  const stripped = name.replace(/^(\[[^\]]*\]\s*)*/u, '').trim()
+  return stripped || name
 }
 
 export type ColDef = { key: keyof StatRow; label: string; fmt?: 'pct' | 'dec' }
@@ -133,9 +140,10 @@ export default function StatsTable({ rows, config, teams }: {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [colsOpen])
 
-  const conditions = config?.conditions ?? {}
-  const gradients  = config?.gradients  ?? {}
-  const nameMap = config?.nameMap ?? {}
+  const conditions  = config?.conditions ?? {}
+  const gradients   = config?.gradients  ?? {}
+  const nameMap     = config?.nameMap    ?? {}
+  const captainSet  = useMemo(() => new Set(config?.captains ?? []), [config])
 
   // Build a flat lookup: auction player_name → price
   const priceByAuctionName = useMemo(() => {
@@ -317,7 +325,12 @@ export default function StatsTable({ rows, config, teams }: {
           </tr>
         </thead>
         <tbody>
-          {sorted.filter(r => !nameFilter || (r['name'] as string)?.toLowerCase().includes(nameFilter.toLowerCase())).map((row, i) => (
+          {sorted.filter(r => {
+            if (!nameFilter) return true
+            const q = nameFilter.toLowerCase()
+            const displayName = (r['auction_name'] as string | null) ?? (r['name'] as string) ?? ''
+            return stripClanTag(displayName).toLowerCase().includes(q) || displayName.toLowerCase().includes(q)
+          }).map((row, i) => (
             <tr key={row['name'] as string} className={cn('border-b border-zinc-800/40', i % 2 === 0 ? 'bg-zinc-900/30' : '')}>
               {visibleCols.map(col => {
                 const val     = row[col.key]
@@ -342,7 +355,16 @@ export default function StatsTable({ rows, config, teams }: {
                       sortKey === col.key ? 'text-zinc-200' : ''
                     )}>
                     {col.key === 'name'
-                      ? <span className="block truncate max-w-[180px]">{(row['auction_name'] as string | null) ?? (val as string)}</span>
+                      ? (() => {
+                          const displayName = (row['auction_name'] as string | null) ?? (val as string)
+                          const isCaptain   = captainSet.has(row['name'] as string)
+                          return (
+                            <span className="flex items-center gap-1 max-w-[180px]">
+                              {isCaptain && <Crown className="w-2.5 h-2.5 flex-shrink-0 text-amber-400" />}
+                              <span className="block truncate">{stripClanTag(displayName ?? '')}</span>
+                            </span>
+                          )
+                        })()
                       : fmtVal(val as any, col.fmt)}
                   </td>
                 )

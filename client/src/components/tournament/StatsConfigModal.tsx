@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { X, Plus, Trash2 } from 'lucide-react'
+import { X, Plus, Trash2, Crown, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { STAT_COLS, type StatsConfig, type GradientType } from './StatsTable'
+import { STAT_COLS, stripClanTag, type StatsConfig, type GradientType } from './StatsTable'
 
 const NUMERIC_COLS = STAT_COLS.filter(c => c.key !== 'rank' && c.key !== 'name')
 const GRADIENT_OPTIONS: { value: GradientType | ''; label: string }[] = [
@@ -93,6 +93,7 @@ export default function StatsConfigModal({
   divisionName,
   statNames,
   auctionPlayers,
+  otherConfigs,
   onSave,
   onClose,
 }: {
@@ -100,14 +101,26 @@ export default function StatsConfigModal({
   divisionName:   string
   statNames:      string[]
   auctionPlayers: Array<{ name: string; cost: number }>
+  otherConfigs?:  Array<{ name: string; config: StatsConfig }>
   onSave:         (cfg: StatsConfig) => void
   onClose:        () => void
 }) {
-  const [tab,     setTab]     = useState<Tab>('visibility')
-  const [hidden,  setHidden]  = useState<Set<string>>(new Set(initial.hiddenColumns))
-  const [conds,   setConds]   = useState<StatsConfig['conditions']>({ ...initial.conditions })
-  const [grads,   setGrads]   = useState<StatsConfig['gradients']>({ ...initial.gradients })
-  const [nameMap,  setNameMap]  = useState<Record<string, string>>(initial.nameMap ?? {})
+  const [tab,        setTab]       = useState<Tab>('visibility')
+  const [hidden,     setHidden]    = useState<Set<string>>(new Set(initial.hiddenColumns))
+  const [conds,      setConds]     = useState<StatsConfig['conditions']>({ ...initial.conditions })
+  const [grads,      setGrads]     = useState<StatsConfig['gradients']>({ ...initial.gradients })
+  const [importFrom, setImportFrom] = useState('')
+
+  function applyImport() {
+    const src = otherConfigs?.find(c => c.name === importFrom)
+    if (!src) return
+    setHidden(new Set(src.config.hiddenColumns))
+    setConds({ ...src.config.conditions })
+    setGrads({ ...src.config.gradients })
+    setImportFrom('')
+  }
+  const [nameMap,   setNameMap]   = useState<Record<string, string>>(initial.nameMap ?? {})
+  const [captains,  setCaptains]  = useState<Set<string>>(new Set(initial.captains ?? []))
   const [mapFilter, setMapFilter] = useState('')
 
   // Conditions editing state
@@ -139,12 +152,21 @@ export default function StatsConfigModal({
     })
   }
 
+  function toggleCaptain(inGameName: string) {
+    setCaptains(prev => {
+      const s = new Set(prev)
+      s.has(inGameName) ? s.delete(inGameName) : s.add(inGameName)
+      return s
+    })
+  }
+
   function save() {
     onSave({
       hiddenColumns: [...hidden],
       conditions:    conds,
       gradients:     grads,
       nameMap,
+      captains:      [...captains],
     })
   }
 
@@ -172,6 +194,29 @@ export default function StatsConfigModal({
             </button>
           ))}
         </div>
+
+        {/* Import bar */}
+        {otherConfigs && otherConfigs.length > 0 && (
+          <div className="flex items-center gap-2 px-5 py-2.5 border-b border-zinc-800 bg-zinc-900/50 flex-shrink-0">
+            <Download className="w-3 h-3 text-zinc-500 flex-shrink-0" />
+            <span className="text-[11px] text-zinc-500 flex-shrink-0">Import visibility/conditions/colors from</span>
+            <select
+              value={importFrom}
+              onChange={e => setImportFrom(e.target.value)}
+              className="flex-1 min-w-0 px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-zinc-300 focus:outline-none focus:border-amber-500/50 cursor-pointer">
+              <option value="">— choose division —</option>
+              {otherConfigs.map(c => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+            <button
+              disabled={!importFrom}
+              onClick={applyImport}
+              className="flex-shrink-0 px-3 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-medium border border-amber-500/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+              Apply
+            </button>
+          </div>
+        )}
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5">
@@ -314,15 +359,34 @@ export default function StatsConfigModal({
                 {statNames
                   .filter(n => !mapFilter || n.toLowerCase().includes(mapFilter.toLowerCase()))
                   .map(inGameName => {
-                    const mapped = nameMap[inGameName] ?? ''
-                    const player = auctionPlayers.find(p => p.name === mapped)
+                    const mapped      = nameMap[inGameName] ?? ''
+                    const player      = auctionPlayers.find(p => p.name === mapped)
+                    const isCaptain   = captains.has(inGameName)
+                    // Exclude names already selected in other rows
+                    const alreadyUsed = new Set(Object.entries(nameMap)
+                      .filter(([k]) => k !== inGameName)
+                      .map(([, v]) => v))
+                    const availableOptions = auctionPlayers.filter(p => !alreadyUsed.has(p.name))
                     return (
                       <div key={inGameName} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700">
-                        <span className="font-mono text-xs text-zinc-300 flex-1 truncate">{inGameName}</span>
-                        <span className="text-zinc-600 text-xs">→</span>
+                        <button
+                          onClick={() => toggleCaptain(inGameName)}
+                          title={isCaptain ? 'Remove captain' : 'Mark as captain'}
+                          className={cn(
+                            'flex-shrink-0 p-1 rounded transition-colors',
+                            isCaptain
+                              ? 'text-amber-400 hover:text-amber-300'
+                              : 'text-zinc-600 hover:text-zinc-400'
+                          )}>
+                          <Crown className="w-3 h-3" />
+                        </button>
+                        <span className="font-mono text-xs text-zinc-300 flex-1 truncate min-w-0" title={inGameName}>
+                          {stripClanTag(inGameName)}
+                        </span>
+                        <span className="text-zinc-600 text-xs flex-shrink-0">→</span>
                         <PlayerPicker
                           value={mapped}
-                          options={auctionPlayers}
+                          options={availableOptions}
                           onChange={v => setNameMap(prev => {
                             const n = { ...prev }
                             if (v) n[inGameName] = v; else delete n[inGameName]
