@@ -53,20 +53,27 @@ export default function DivisionTab({ auction, slug, role, project }: {
   const [activeSession,  setActiveSession]  = useState<AuctionSession | null>(null)
   const [teamRenameVal,   setTeamRenameVal]   = useState('')
   const [teamRenameBusy,  setTeamRenameBusy]  = useState(false)
-  const [pickBanSession,   setPickBanSession]   = useState<PickBanSession | null>(null)
-  const [startingPickBan,  setStartingPickBan]  = useState(false)
-  const [showPickBanModal, setShowPickBanModal] = useState(false)
+  const [pickBanSession,    setPickBanSession]    = useState<PickBanSession | null>(null)
+  const [pickBanLoadedFor,  setPickBanLoadedFor]  = useState<number | null | undefined>(undefined)
+  const [startingPickBan,   setStartingPickBan]   = useState(false)
+  const [showPickBanModal,  setShowPickBanModal]  = useState(false)
   const canManage = role === 'admin' || role === 'host'
   const isCaptain = role === 'captain'
 
   // Derive finals match from matches state (stable primitive deps for effect below)
   const finalsMatch = matches.find(m => m.is_finals === 1) ?? null
 
+  // Derived synchronously: true whenever finalsMatch exists but hasn't been fetched yet for this match id.
+  // This avoids a flash of the wrong button between renders and the effect firing.
+  const pickBanLoading = finalsMatch ? pickBanLoadedFor !== finalsMatch.id : false
+
   useEffect(() => {
-    if (!finalsMatch) { setPickBanSession(null); return }
-    bracketsApi.getPickBanByMatch(finalsMatch.id)
+    if (!finalsMatch) { setPickBanSession(null); setPickBanLoadedFor(null); return }
+    const id = finalsMatch.id
+    bracketsApi.getPickBanByMatch(id)
       .then(({ session }) => setPickBanSession(session))
       .catch(() => setPickBanSession(null))
+      .finally(() => setPickBanLoadedFor(id))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finalsMatch?.id, finalsMatch?.captain_a_id, finalsMatch?.captain_b_id])
 
@@ -481,7 +488,7 @@ export default function DivisionTab({ auction, slug, role, project }: {
                   <p className="text-xs text-zinc-700 italic">Scores will appear once bracket is generated.</p>
                 )}
                 {/* Pick-ban trigger / join */}
-                {finalsMatch && (() => {
+                {finalsMatch && !pickBanLoading && (() => {
                   const bothFinalists = !!(finalsMatch.captain_a_id && finalsMatch.captain_b_id)
                   if (canManage) {
                     if (pickBanSession) return (

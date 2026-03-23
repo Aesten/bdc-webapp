@@ -250,11 +250,13 @@ export default function TournamentDetail({ slug, roleOverride }: TournamentDetai
 
       {/* Content */}
       <div className="flex-1 overflow-auto">
-        {activeAuction ? (
-          <div className="pl-[5%] pr-[5%] py-6 max-w-[80vw]">
-            <DivisionTab key={activeAuction.id} auction={activeAuction} slug={slug} role={role} project={project} />
+        {/* Division tabs — all kept mounted, hidden when inactive to avoid remount flicker */}
+        {auctions.map(auction => (
+          <div key={auction.id} className={cn('pl-[5%] pr-[5%] py-6 max-w-[80vw]', tab !== `division:${auction.id}` && 'hidden')}>
+            <DivisionTab auction={auction} slug={slug} role={role} project={project} />
           </div>
-        ) : (
+        ))}
+        {!activeAuction && (
           <div className="pl-[5%] py-6">
             {tab === 'players'  && <div className="max-w-[50vw]"><PlayersTab  slug={slug} role={role} /></div>}
             {tab === 'matchups' && <div className="max-w-[70vw]"><MatchupsTab slug={slug} maps={maps} factions={factions} matchups={matchups} setMatchups={setMatchups} role={role} project={project} onProjectUpdate={setProject} /></div>}

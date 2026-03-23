@@ -8,6 +8,9 @@ node_modules/
 # Frontend build output
 client/dist/
 
+# Dev folders
+exports/
+
 # Environment variables
 .env
 .env.local

@@ -31,7 +31,7 @@ export interface StatsConfig {
 
 /** Strip leading clan tags like [TAG1] [TAG2] from a display name */
 export function stripClanTag(name: string): string {
-  const stripped = name.replace(/^(\[[^\]]*\]\s*)*/u, '').trim()
+  const stripped = name.replace(/^(\[[^\]]*\]\s*)*/, '').trim()
   return stripped || name
 }
 

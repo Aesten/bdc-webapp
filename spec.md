@@ -32,7 +32,7 @@ Authentication is cookie-based (HTTP-only, `SameSite=Strict`). The middleware (`
 
 ---
 
-## Database Schema (v10)
+## Database Schema (v11)
 
 ### `hosts`
 Tournament organizers. Fields: `id`, `username` (unique), `password_hash`, `token` (session token, null = logged out), `token_generated_at`, `created_at`.
@@ -118,6 +118,11 @@ One per finals match. Created by the host once both finalists are determined. Fi
 - `GET /public/featured` — Get featured tournament (public, no auth)
 - `GET /public/list` — List all tournaments (public)
 - `GET /public/:slug` — Full public tournament overview (live sessions, brackets, matchups, results)
+- `GET /stats` — List auction IDs that have stats files uploaded (admin/host)
+- `POST /stats/:auctionId` — Upload a stats file (`.csv` or `.json`) for a division (admin/host). CSV is auto-converted to JSON.
+- `POST /stats/:auctionId/config` — Save stats display config for a division (admin/host)
+- `DELETE /stats/:auctionId` — Delete stats file and config for a division (admin/host)
+- `GET /public/:slug/stats/:auctionId` — Get stats rows + config for a division (public, no auth). Returns `{ rows, config }`.
 
 ### Players (`/api/players`)
 - `GET /tournament/:slug` — List all players for a tournament
@@ -239,7 +244,7 @@ Each tournament has a `map_pool` (JSON array of map IDs used for rolling group-s
 
 **Public** (no auth):
 - `/` — Home page. Lists tournaments.
-- `/t/:slug` — Public tournament page: bracket visualization, published matchups, live session links, team roster links.
+- `/t/:slug` — Public tournament page: bracket visualization, published matchups, live session links, team roster links, and per-division Statistics tab (if stats have been uploaded).
 - `/archive` — List of all tournaments.
 
 **Login**:
@@ -255,6 +260,7 @@ Each tournament has a `map_pool` (JSON array of map IDs used for rolling group-s
 - 240px sidebar listing hosts (with online/offline dot) and their tournaments indented beneath. Context menu on right-click for management actions.
 - Clicking a tournament opens `TournamentDetail` in the right pane (admin roleOverride).
 - Map management accessible via Maps icon in sidebar.
+- Stats management accessible via BarChart2 icon in sidebar (`StatsPage`): upload/replace/delete per-division stats files, and configure display options.
 
 **Auctioneer** (`/auctioneer`):
 - Narrow icon sidebar with single tournament icon.
@@ -294,10 +300,12 @@ Core of the host/admin/auctioneer/captain experience (`client/src/components/tou
 | `TournamentDetail` | `components/tournament/` | Core tabbed tournament management UI |
 | `BracketView` | `components/tournament/` | Bracket visualization, match result entry |
 | `GroupStageView` | `components/tournament/` | Group A/B round-robin display |
-| `DivisionTab` | `components/tournament/` | Captain management + bracket creation |
+| `DivisionTab` | `components/tournament/` | Captain management + bracket creation. All division instances stay mounted simultaneously (hidden via CSS) to avoid remount flicker on tab switch. |
 | `KnockoutSection` | `components/tournament/division/` | Semi-finals + finals match rows |
 | `PickBanModal` | `components/tournament/division/` | Host-facing pick-ban session viewer (embedded in bracket) |
 | `FinalsMatchupCard` | `components/` | Shared display card: map image, faction icons, `!setmap` command with copy button. Used in both `PickBanPage` and `PickBanModal`. |
+| `StatsTable` | `components/tournament/` | Sortable, filterable stats table with sticky rank/name columns, column visibility toggle, gradient coloring, clan-tag stripping, and captain crown icons. |
+| `StatsConfigModal` | `components/tournament/` | Admin config modal for a division's stats: column visibility, conditions (N/A thresholds), color gradients, and in-game → auction player name mapping with captain flags. Supports importing visibility/conditions/colors from another division. |
 | `EventBubble` | `components/` | Poll-based notification widget (bottom-right corner) |
 | `PublicNav` | `components/` | Navigation bar for public pages |
 
@@ -315,6 +323,40 @@ Core of the host/admin/auctioneer/captain experience (`client/src/components/tou
 | Go Live button | disabled+tooltip | disabled+tooltip | ✓ | ✗ |
 | Generate bracket | ✓ (once, then locked) | ✓ (can reset) | ✗ | ✗ |
 | EventBubble notifications | ✓ | ✗ | ✗ | ✓ |
+
+---
+
+## Division Statistics
+
+Each division (auction) can have a stats file uploaded by the host or admin. Stats are stored as JSON in `uploads/stats/{auctionId}.json`. A display config is stored separately in `uploads/stats/{auctionId}.config.json` so it can be updated without re-uploading the data.
+
+### Data upload
+Files can be uploaded as `.csv` (semicolon-separated, auto-converted) or `.json`. The CSV parser maps header names to snake_case keys via a fixed column map. Stats are served publicly once uploaded.
+
+### Stats columns
+A fixed set of columns is defined in `STAT_COLS` (mirrored in both `StatsTable.tsx` and the export script). The table includes standard combat stats plus two computed columns inserted after S/R: **Cost** (auction purchase price, 1 decimal) and **C/kS** (cost × 1000 / score — a value-for-money metric, excluded for players purchased at ≤ 0.1).
+
+### Display config (`StatsConfig`)
+Stored per division, contains:
+- `hiddenColumns: string[]` — columns completely hidden from the public table
+- `conditions: Record<string, { dependsOn: string; minValue: number }>` — if a dependency column is below the threshold, the cell shows `—` instead of a value (e.g. Hit% requires Shots ≥ 50)
+- `gradients: Record<string, GradientType>` — per-column background gradient: `green-up`, `red-up`, `yellow-up` (0 = transparent, max = full color), or `heatmap` (min = red, max = green)
+- `nameMap: Record<string, string>` — maps in-game stat names to auction player names; enables Cost/C/kS columns and shows auction names in the table
+- `captains: string[]` — in-game names of captains (who don't appear in the auction list); shown with a ♛ crown icon
+
+### Name display
+In-game names often include leading clan tags like `[TAG1] [TAG2] PlayerName`. These are stripped for display using a regex (`/^(\[[^\]]*\]\s*)*/`). The auction name (from `nameMap`) takes priority over the in-game name when set.
+
+### Config modal tabs
+- **Visibility** — toggle columns on/off for public view
+- **Conditions** — add/edit/remove N/A threshold rules
+- **Colors** — assign gradient type per column with live color preview
+- **Mapping** — link each in-game name to an auction player; captain toggle per row; already-mapped players are excluded from other rows' dropdowns; searchable picker for 60+ player lists
+
+An **Import** bar at the top of the modal allows copying visibility/conditions/colors from another division (nameMap and captains are not imported).
+
+### Public table features
+Viewers can sort by any column, filter by name (matches stripped name or auction name), and toggle column visibility locally. Admin-hidden columns are excluded entirely and do not appear in the toggle list.
 
 ---
 
@@ -341,3 +383,7 @@ Core of the host/admin/auctioneer/captain experience (`client/src/components/tou
 **Maps are global, admin-managed** — The map pool is not per-tournament. The admin maintains a single global list. Each tournament references a subset of those maps via its `map_pool` and `finals_map_pool` ID arrays.
 
 **`game_id` for server commands** — Each map has an optional `game_id` field storing the in-game identifier (e.g. `mp_skirmish_valley`). This value is used in `!setmap` commands. Falls back to the map's display name if not set.
+
+**Stats stored as flat files, not in the database** — Division stats and their display configs are stored as JSON files on disk (`uploads/stats/`), not in SQLite. This keeps the schema stable and makes it easy to re-upload data without a migration. The config is a separate file so it can be updated independently of the data file.
+
+**Division tabs stay mounted** — All `DivisionTab` instances within `TournamentDetail` are rendered simultaneously and shown/hidden via CSS `hidden` class rather than conditionally mounting/unmounting. This eliminates visible re-render flicker and loading states when switching between divisions.
