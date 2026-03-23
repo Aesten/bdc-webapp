@@ -94,4 +94,14 @@ export const tournamentsApi = {
   listPublic: () => api.get<Array<{ id: number; name: string; slug: string; description: string | null; status: string; created_at: string }>>('/api/tournaments/public/list'),
 
   getPublic: (slug: string) => api.get<PublicTournamentOverview>(`/api/tournaments/public/${slug}`),
+
+  // Stats
+  listStats:    () => api.get<number[]>('/api/tournaments/stats'),
+  uploadStats:  (auctionId: number, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api.upload<{ ok: boolean }>(`/api/tournaments/stats/${auctionId}`, form)
+  },
+  deleteStats:  (auctionId: number) => api.delete<{ ok: boolean }>(`/api/tournaments/stats/${auctionId}`),
+  saveConfig:   (auctionId: number, config: unknown) => api.post<{ ok: boolean }>(`/api/tournaments/stats/${auctionId}/config`, config),
 }

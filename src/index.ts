@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { upgradeWebSocket, websocket } from 'hono/bun'
 import { serveStatic } from 'hono/bun'
+import { logger } from 'hono/logger'
 import { initDb } from './db/database'
 import { onWsOpen, onWsMessage, onWsClose } from './ws/auctionRoom'
 import { onPickBanWsOpen, onPickBanWsClose } from './ws/pickBanRoom'
@@ -19,6 +20,8 @@ initDb()
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 const app = new Hono()
+
+app.use('*', logger())
 
 app.get('/api/health', (c) => c.json({ ok: true, ts: new Date().toISOString() }))
 

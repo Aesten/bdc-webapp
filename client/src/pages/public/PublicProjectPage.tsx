@@ -10,7 +10,8 @@ import BracketView from '@/components/tournament/BracketView'
 import { KnockoutScoreRow } from '@/components/tournament/division/KnockoutSection'
 import { cn, imgSrc } from '@/lib/utils'
 import { parseClasses, CLASS_ICON, CLASS_COLOR, CLASSES } from '@/components/tournament/shared'
-import { Loader2, Trophy, Copy, Check } from 'lucide-react'
+import { Loader2, Trophy, Copy, Check, BarChart2 } from 'lucide-react'
+import StatsTable, { type StatRow, type StatsConfig } from '@/components/tournament/StatsTable'
 
 import Aserai   from '@/assets/factions/Aserai.webp'
 import Battania from '@/assets/factions/Battania.webp'
@@ -295,7 +296,8 @@ export default function PublicProjectPage() {
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(false)
   const [tab,         setTab]         = useState(0)
-  const [innerTab,    setInnerTab]    = useState<'bracket' | 'teams'>('bracket')
+  const [innerTab,    setInnerTab]    = useState<'bracket' | 'teams' | 'stats'>('bracket')
+  const [statsCache,  setStatsCache]  = useState<Record<number, { rows: StatRow[]; config: StatsConfig | null } | null>>({})
   const [sharedScale, setSharedScale] = useState(1)
   const finalsRightRef  = useRef<HTMLDivElement>(null)
   const finalsInnerRef  = useRef<HTMLDivElement>(null)
@@ -332,8 +334,19 @@ export default function PublicProjectPage() {
     } else {
       setTab(0)
     }
-    setInnerTab(tabParam === 'teams' ? 'teams' : 'bracket')
+    setInnerTab(tabParam === 'teams' ? 'teams' : tabParam === 'stats' ? 'stats' : 'bracket')
   }, [data, searchParams])
+
+  // Fetch stats when stats tab is active for the current division
+  useEffect(() => {
+    if (!slug || !data || innerTab !== 'stats') return
+    const id = data.divisions[tab]?.auction.id
+    if (id === undefined || id in statsCache) return
+    fetch(`/api/tournaments/public/${slug}/stats/${id}`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setStatsCache(prev => ({ ...prev, [id]: d ?? null })))
+      .catch(() => setStatsCache(prev => ({ ...prev, [id]: null })))
+  }, [innerTab, tab, data, slug])
 
   if (loading) return (
     <div className="h-screen bg-zinc-950 flex items-center justify-center">
@@ -398,7 +411,7 @@ export default function PublicProjectPage() {
           <div className="w-px h-4 bg-zinc-700 mx-2 self-center flex-shrink-0" />
         )}
 
-        {([['bracket', 'Brackets'], ['teams', 'Teams']] as const).map(([id, label]) => (
+        {([['bracket', 'Brackets'], ['teams', 'Teams'], ['stats', 'Statistics']] as const).map(([id, label]) => (
           <button key={id} onClick={() => {
             setInnerTab(id)
             setSearchParams(prev => { const p = new URLSearchParams(prev); p.set('tab', id); return p }, { replace: true })
@@ -483,6 +496,25 @@ export default function PublicProjectPage() {
             </div>
           </div>
         )}
+
+        {/* Stats tab */}
+        {innerTab === 'stats' && activeDivision && (() => {
+          const id    = activeDivision.auction.id
+          const entry = statsCache[id]
+          if (!(id in statsCache)) return (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-zinc-600" />
+            </div>
+          )
+          if (!entry) return (
+            <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
+              <BarChart2 className="w-8 h-8 text-zinc-700" />
+              <p className="text-sm text-zinc-600 font-medium">Statistics not yet available</p>
+              <p className="text-xs text-zinc-700">Check back later.</p>
+            </div>
+          )
+          return <StatsTable rows={entry.rows} config={entry.config} teams={activeDivision.teams} />
+        })()}
 
         {/* Teams tab */}
         {innerTab === 'teams' && activeDivision && (

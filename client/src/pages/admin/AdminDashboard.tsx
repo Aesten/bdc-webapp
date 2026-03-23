@@ -7,8 +7,9 @@ import { authApi } from '@/api/auth'
 import { cn } from '@/lib/utils'
 import TournamentDetail from '@/components/tournament/TournamentDetail'
 import MapsPage from './MapsPage'
+import StatsPage from './StatsPage'
 import {
-  LogOut, FolderOpen, Map,
+  LogOut, FolderOpen, Map, BarChart2,
   Loader2, Plus, Trash2, Star,
   AlertCircle, X, Pencil
 } from 'lucide-react'
@@ -149,7 +150,7 @@ function TournamentModal({ initial, onSave, onClose }: {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type AdminView = { type: 'tournament'; slug: string } | { type: 'maps' } | null
+type AdminView = { type: 'tournament'; slug: string } | { type: 'maps' } | { type: 'stats' } | null
 
 type ModalState =
   | { type: 'create' }
@@ -290,6 +291,16 @@ export default function AdminShell() {
               <Map className="w-3.5 h-3.5 flex-shrink-0 text-zinc-500" />
               Maps
             </button>
+            <button
+              onClick={() => setView({ type: 'stats' })}
+              className={cn(
+                'flex items-center gap-2 px-2 py-1.5 rounded-lg w-full text-left text-xs font-medium transition-colors',
+                view?.type === 'stats' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+              )}
+            >
+              <BarChart2 className="w-3.5 h-3.5 flex-shrink-0 text-zinc-500" />
+              Stats
+            </button>
           </div>
         </div>
 
@@ -314,7 +325,8 @@ export default function AdminShell() {
         {view?.type === 'tournament' && (
           <TournamentDetail slug={view.slug} roleOverride="admin" />
         )}
-        {view?.type === 'maps' && <MapsPage />}
+        {view?.type === 'maps'  && <MapsPage />}
+        {view?.type === 'stats' && <StatsPage />}
       </div>
     </div>
   )

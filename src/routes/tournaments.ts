@@ -3,6 +3,8 @@ import { queryAll, queryOne, execute } from '../db/database'
 import { requireAuth, type AuthEnv } from '../middleware/auth'
 import { slugify } from '../types'
 import type { Tournament, HostJwtPayload, CaptainJwtPayload } from '../types'
+import { resolve, join } from 'path'
+import { mkdirSync, existsSync, unlinkSync, readdirSync } from 'fs'
 
 const tournaments = new Hono<AuthEnv>()
 
@@ -50,6 +52,16 @@ tournaments.get('/', requireAuth('admin', 'host'), (c) => {
 })
 
 // ─── Get Tournament ───────────────────────────────────────────────────────────
+
+// ─── Stats: list uploaded (admin/host) — must be before /:slug ───────────────
+
+tournaments.get('/stats', requireAuth('admin', 'host'), (c) => {
+  const dir = resolve(process.cwd(), 'uploads', 'stats')
+  if (!existsSync(dir)) return c.json([])
+  const files = readdirSync(dir).filter(f => f.endsWith('.json') && !f.endsWith('.config.json'))
+  const ids   = files.map(f => Number(f.replace('.json', ''))).filter(n => !isNaN(n))
+  return c.json(ids)
+})
 
 tournaments.get('/:slug', requireAuth('admin', 'host', 'auctioneer', 'captain'), (c) => {
   const auth = c.get('auth')
@@ -271,6 +283,159 @@ tournaments.get('/public/:slug', (c) => {
   )
 
   return c.json({ tournament, divisions, matchups })
+})
+
+// ─── Stats: public read ───────────────────────────────────────────────────────
+
+tournaments.get('/public/:slug/stats/:auctionId', async (c) => {
+  const auctionId  = Number(c.req.param('auctionId'))
+  const statsPath  = resolve(process.cwd(), 'uploads', 'stats', `${auctionId}.json`)
+  const configPath = resolve(process.cwd(), 'uploads', 'stats', `${auctionId}.config.json`)
+  if (!existsSync(statsPath)) return c.json(null)
+  try {
+    const rows   = JSON.parse(await Bun.file(statsPath).text())
+    const config = existsSync(configPath) ? JSON.parse(await Bun.file(configPath).text()) : null
+    return c.json({ rows, config })
+  } catch {
+    return c.json(null)
+  }
+})
+
+// ─── Stats CSV parser ─────────────────────────────────────────────────────────
+
+const CSV_COL_MAP: Record<string, string> = {
+  '#':          'rank',
+  'Name':       'name',
+  'Played':     'played',
+  'Won':        'won',
+  'WR%':        'wr',
+  'Score':      'score',
+  'S/R':        'score_per_round',
+  'K':          'kills',
+  'D':          'deaths',
+  'A':          'assists',
+  'K/R':        'kpr',
+  'D/R':        'dpr',
+  'A/R':        'apr',
+  'K+A/R':      'kapr',
+  'Spawns':     'spawns',
+  'Survival%':  'survival',
+  'MVP':        'mvp',
+  'MVP%':       'mvp_rate',
+  'FirstK':     'first_kills',
+  'FirstD':     'first_deaths',
+  'Bonks':      'bonks',
+  'Couches':    'couches',
+  'Kicks':      'kicks',
+  'HorseDmg':   'horse_dmg',
+  'HorseKills': 'horse_kills',
+  'Shots':      'shots',
+  'Hits':       'hits',
+  'Hit%':       'hit_rate',
+  'HS':         'hs',
+  'HS%':        'hs_rate',
+  'TK':         'tk',
+  'TH':         'th',
+  'TD':         'td',
+  'THTaken':    'th_taken',
+  'Suicides':   'suicides',
+  'MeleeDmg':   'melee_dmg',
+  'MountedDmg': 'mounted_dmg',
+  'RangedDmg':  'ranged_dmg',
+  'Melee%':     'melee_pct',
+  'Mounted%':   'mounted_pct',
+  'Ranged%':    'ranged_pct',
+}
+
+function parseStatsCsv(text: string): Record<string, unknown>[] {
+  const lines   = text.trim().split(/\r?\n/)
+  const headers = lines[0].split(';')
+  const rows: Record<string, unknown>[] = []
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue
+    const cols   = lines[i].split(';')
+    const row: Record<string, unknown> = {}
+    headers.forEach((h, idx) => {
+      const key = CSV_COL_MAP[h]
+      if (!key) return // skip unmapped (e.g. HorseKills)
+      const raw = cols[idx] ?? ''
+      row[key]  = key === 'name' ? raw : (raw === '' ? null : Number(raw))
+    })
+    rows.push(row)
+  }
+  return rows
+}
+
+// ─── Stats: upload (admin/host) ───────────────────────────────────────────────
+
+tournaments.post('/stats/:auctionId', requireAuth('admin', 'host'), async (c) => {
+  const auth      = c.get('auth')
+  const auctionId = Number(c.req.param('auctionId'))
+  const auction   = queryOne<{ tournament_id: number }>('SELECT tournament_id FROM auctions WHERE id = ?', [auctionId])
+  if (!auction) return c.json({ error: 'Auction not found' }, 404)
+  const tournament = queryOne<Tournament>('SELECT * FROM tournaments WHERE id = ?', [auction.tournament_id])
+  if (!tournament || !canAccess(auth, tournament)) return c.json({ error: 'Forbidden' }, 403)
+
+  const body = await c.req.formData()
+  const file = body.get('file')
+  if (!file || typeof file === 'string') return c.json({ error: 'No file uploaded' }, 400)
+
+  const f    = file as File
+  const text = await f.text()
+  let json: string
+
+  if (f.name.endsWith('.csv')) {
+    try {
+      const rows = parseStatsCsv(text)
+      if (!rows.length) return c.json({ error: 'CSV appears empty' }, 400)
+      json = JSON.stringify(rows)
+    } catch {
+      return c.json({ error: 'Failed to parse CSV' }, 400)
+    }
+  } else {
+    try { JSON.parse(text) } catch { return c.json({ error: 'Invalid JSON' }, 400) }
+    json = text
+  }
+
+  const dir = resolve(process.cwd(), 'uploads', 'stats')
+  mkdirSync(dir, { recursive: true })
+  await Bun.write(join(dir, `${auctionId}.json`), json)
+
+  return c.json({ ok: true })
+})
+
+// ─── Stats: save config (admin/host) ─────────────────────────────────────────
+
+tournaments.post('/stats/:auctionId/config', requireAuth('admin', 'host'), async (c) => {
+  const auth      = c.get('auth')
+  const auctionId = Number(c.req.param('auctionId'))
+  const auction   = queryOne<{ tournament_id: number }>('SELECT tournament_id FROM auctions WHERE id = ?', [auctionId])
+  if (!auction) return c.json({ error: 'Auction not found' }, 404)
+  const tournament = queryOne<Tournament>('SELECT * FROM tournaments WHERE id = ?', [auction.tournament_id])
+  if (!tournament || !canAccess(auth, tournament)) return c.json({ error: 'Forbidden' }, 403)
+
+  const body = await c.req.json()
+  const dir  = resolve(process.cwd(), 'uploads', 'stats')
+  mkdirSync(dir, { recursive: true })
+  await Bun.write(join(dir, `${auctionId}.config.json`), JSON.stringify(body))
+  return c.json({ ok: true })
+})
+
+// ─── Stats: delete (admin/host) ───────────────────────────────────────────────
+
+tournaments.delete('/stats/:auctionId', requireAuth('admin', 'host'), (c) => {
+  const auth      = c.get('auth')
+  const auctionId = Number(c.req.param('auctionId'))
+  const auction   = queryOne<{ tournament_id: number }>('SELECT tournament_id FROM auctions WHERE id = ?', [auctionId])
+  if (!auction) return c.json({ error: 'Auction not found' }, 404)
+  const tournament = queryOne<Tournament>('SELECT * FROM tournaments WHERE id = ?', [auction.tournament_id])
+  if (!tournament || !canAccess(auth, tournament)) return c.json({ error: 'Forbidden' }, 403)
+
+  const statsPath  = resolve(process.cwd(), 'uploads', 'stats', `${auctionId}.json`)
+  const configPath = resolve(process.cwd(), 'uploads', 'stats', `${auctionId}.config.json`)
+  if (existsSync(statsPath))  unlinkSync(statsPath)
+  if (existsSync(configPath)) unlinkSync(configPath)
+  return c.json({ ok: true })
 })
 
 export default tournaments
