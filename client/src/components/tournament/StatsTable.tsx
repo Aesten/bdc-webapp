@@ -35,7 +35,7 @@ export function stripClanTag(name: string): string {
   return stripped || name
 }
 
-export type ColDef = { key: keyof StatRow; label: string; fmt?: 'pct' | 'dec' }
+export type ColDef = { key: keyof StatRow; label: string; fmt?: 'pct' | 'dec' | 'dec1' }
 
 export const STAT_COLS: ColDef[] = [
   { key: 'rank',            label: '#'          },
@@ -45,7 +45,7 @@ export const STAT_COLS: ColDef[] = [
   { key: 'wr',              label: 'WR%',       fmt: 'pct' },
   { key: 'score',           label: 'Score'      },
   { key: 'score_per_round', label: 'S/R',       fmt: 'dec' },
-  { key: 'cost',            label: 'Cost',      fmt: 'dec' },
+  { key: 'cost',            label: 'Cost',      fmt: 'dec1' },
   { key: 'cost_per_score',  label: 'C/kS',      fmt: 'dec' },
   { key: 'kills',           label: 'K'          },
   { key: 'deaths',          label: 'D'          },
@@ -83,11 +83,12 @@ export const STAT_COLS: ColDef[] = [
   { key: 'ranged_pct',      label: 'Ranged%',   fmt: 'pct' },
 ]
 
-function fmtVal(val: number | string | null | undefined, fmt?: 'pct' | 'dec'): string {
+function fmtVal(val: number | string | null | undefined, fmt?: 'pct' | 'dec' | 'dec1'): string {
   if (val === null || val === undefined) return '—'
   if (typeof val === 'string') return val
-  if (fmt === 'pct') return `${(val * 100).toFixed(1)}%`
-  if (fmt === 'dec') return val.toFixed(2)
+  if (fmt === 'pct')  return `${(val * 100).toFixed(1)}%`
+  if (fmt === 'dec')  return val.toFixed(2)
+  if (fmt === 'dec1') return val.toFixed(1)
   return String(val)
 }
 
