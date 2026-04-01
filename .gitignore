@@ -1,5 +1,6 @@
 # Database & uploads (runtime data, never commit)
 data/
+data-backup/
 uploads/
 
 # Dependencies
